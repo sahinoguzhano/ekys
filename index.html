@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>⚡ EKYS Denemeler v1.1</title>
+<title>⚡ EKYS Denemeler v1.2</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <style>
 :root{
@@ -83,16 +83,19 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 .bilgi-mesaji{color:var(--muted)}
 .giris-kart{max-width:420px;margin:12vh auto;text-align:center}
 .grafik-yok{color:var(--muted);font-size:.9rem;padding:10px 0;text-align:center}
+.grafik-not{color:var(--muted);font-size:.78rem;margin-top:6px;font-style:italic}
 @media(max-width:600px){h1{font-size:1.4rem}#zamanlayici{font-size:1.3rem}.ozet-kart .deger{font-size:1.3rem}}
 </style>
 </head>
 <body>
 
-<!-- ═══════════ 1) GİRİŞ EKRANI ═══════════ -->
 <div id="girisEkrani" class="ekran">
   <div class="panel giris-kart">
-    <h1 class="neon-baslik">⚡ EKYS Denemeler v1.1</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denemeler v1.2 </h1>
+
     <p style="margin:14px 0 22px;color:var(--muted);">Maarif Modeli • Müdür &amp; Müdür Yardımcılığı Deneme Sınavı</p>
+    <p style="margin:10px 0 22px;color:var(--muted);">- sahinoguzhan@gmail.com~ 2026-eylül</p>
+    
     <input type="text" id="kullaniciAdiInput" placeholder="Kullanıcı adını yaz..." maxlength="30"
            onkeydown="if(event.key==='Enter')girisYap()"/>
     <div style="margin-top:18px">
@@ -101,7 +104,6 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
   </div>
 </div>
 
-<!-- ═══════════ 2) ANA EKRAN ═══════════ -->
 <div id="anaEkran" class="ekran">
   <div class="ust-bar">
     <h1 class="neon-baslik">⚡ EKYS NEON SINAV</h1>
@@ -125,11 +127,10 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
   </div>
 </div>
 
-<!-- ═══════════ 3) SINAV EKRANI ═══════════ -->
 <div id="sinavEkrani" class="ekran">
   <div class="ust-bar">
     <span class="rozet" id="soruSayaci">Soru 1 / 10</span>
-    <div id="zamanlayici">00:00</div>
+    <div id="zamanlayici">⏳ 01:00</div>
   </div>
   <div class="ilerleme-dis"><div class="ilerleme-ic" id="ilerleme"></div></div>
   <div class="panel">
@@ -144,7 +145,6 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
   </div>
 </div>
 
-<!-- ═══════════ 4) SONUÇ EKRANI ═══════════ -->
 <div id="sonucEkrani" class="ekran">
   <h1 class="neon-baslik" style="margin-bottom:18px">🏁 Sınav Tamamlandı!</h1>
   <div id="sonucOzet" class="ozet-kartlar"></div>
@@ -173,9 +173,8 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
       '<div style="background:#05060f;color:#ff2079;height:100vh;display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:Segoe UI,sans-serif;text-align:center;padding:20px;box-sizing:border-box;">' +
       '<h1 style="font-size:2.5rem;text-shadow:0 0 15px #ff2079;letter-spacing:2px;">⛔ YEREL ÇALIŞTIRMA ENGELLENDİ</h1>' +
       '<p style="margin-top:20px;color:#00fff7;font-size:1.2rem;line-height:1.6;text-shadow:0 0 8px #00fff7;max-width:650px;">' +
-      'Bu uygulama yalnızca <strong>GitHub Pages</strong> üzerinde çalışacak şekilde kilitlenmiştir.<br>' +
-      'VS Code Live Server, XAMPP veya dosyaya çift tıklayarak (<code style="color:#f5f500;">file://</code>) çalıştıramazsınız.<br><br>' +
-      '<span style="color:#f5f500;">Lütfen dosyaları GitHub repository\'nize yükleyin ve <strong>github.io</strong> uzantılı yayındaki linki kullanın.</span>' +
+      'Bu uygulama yalnızca <strong>GitHub Pages</strong> üzerinde çalışacak şekilde kilitlenmiştir.<br><br>' +
+      '<span style="color:#f5f500;">Lütfen dosyaları GitHub repository\'nize yükleyin ve <strong>github.io</strong> uzantılı linki kullanın.</span>' +
       '</p></div>';
     throw new Error('Yerel çalışma engellendi.');
   }
@@ -186,6 +185,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
    ═══════════════════════════════════════════════════════ */
 var DOSYA_ADI = 'sorular.txt';
 var SORU_SAYISI = 10;
+var SINAV_SURESI = 60;
 var EKSIK_ESIGI = 70;
 
 /* ═══════════════════════════════════════════════════════
@@ -205,12 +205,10 @@ var KATEGORILER = [
     'flipped','canlı sınıf']},
   {ad:'Rehberlik ve Özel Eğitim', anahtar:['rehberlik','bep','kaynaştırma','akran zorbalığı','özel eğitim',
     'psikolojik danışma','sociometri','intihar','özel gereksinim','üstün yetenekli','öğrenme güçlüğü','otizm',
-    'dikkat eksikliği','bireyselleştirilmiş','ram','özdek','bilişsel davranışçı','uyum hizmetleri','kümülatif dosya',
-    'parsons','super','mesleki rehberlik']},
+    'dikkat eksikliği','bireyselleştirilmiş','ram','özdek','destek eğitim odası']},
   {ad:'Ölçme ve Değerlendirme', anahtar:['ölçme','değerlendirme','geçerlik','güvenirlik','rubrik','portfolyo',
     'madde güçlük','ayırt edicilik','biçimlendirici','summatif','norm referanslı','kriter referanslı','test','madde',
-    'standart sapma','medyan','mod','çeyrek sapma','analitik rubrik','bütüncül rubrik','süreç portfolyosu',
-    'sergi portfolyosu']},
+    'standart sapma','medyan','mod','çeyrek sapma','analitik rubrik','bütüncül rubrik']},
   {ad:'Mevzuat ve Yönetmelikler', anahtar:['1739','kanun','yönetmelik','yönerge','tevhid-i tedrisat','anayasa',
     'disiplin','okul-aile birliği','öğretmenlik meslek kanunu','mevzuat','ek ders','okul genel kurulu',
     'sınıf geçme','devamsızlık','bağış','kınama','uyarı cezası','öğrenci meclisi','sosyal etkinlikler',
@@ -266,14 +264,12 @@ function goster(id){
 function sorulariYukle(){
   return fetch(DOSYA_ADI)
     .then(function(res){
-      if(!res.ok) throw new Error('Dosya bulunamadı: ' + DOSYA_ADI);
+      if(!res.ok) throw new Error('Dosya bulunamadı');
       return res.text();
     })
     .then(function(txt){
-      /* BOM temizle */
       if(txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
       SORULAR = parseSoruMetni(txt);
-      console.log('✅ ' + SORULAR.length + ' soru yüklendi');
     })
     .catch(function(e){
       console.error('Soru yükleme hatası:', e);
@@ -308,12 +304,10 @@ function parseSoruBloğu(blok){
     var parcalar = govde.split('*');
     var soruMetni = '';
     var secenekler = [];
-
     for(var i=0;i<parcalar.length;i++){
       var p = parcalar[i].trim();
       if(!p) continue;
       if(/^[A-E]\)/.test(p)){
-        /* Aynı harfli şık tekrar ederse atla (veri hatası) */
         var harf = p.charAt(0);
         var zatenVar = false;
         for(var j=0;j<secenekler.length;j++){
@@ -326,18 +320,14 @@ function parseSoruBloğu(blok){
         soruMetni += ' ' + p;
       }
     }
-
     if(secenekler.length < 5 || !soruMetni) return null;
-
     return {
       soru: soruMetni,
       secenekler: secenekler.slice(0,5),
       dogru: dogru,
       kategori: kategoriBelirle(soruMetni + ' ' + secenekler.join(' '))
     };
-  }catch(e){
-    return null;
-  }
+  }catch(e){ return null; }
 }
 
 function kategoriBelirle(metin){
@@ -360,7 +350,7 @@ function soruDurumuGuncelle(){
     el.style.color = 'var(--neon-green)';
     if(btn) btn.disabled = false;
   }else{
-    el.innerHTML = '<span class="hata-mesaji">⚠️ Soru yüklenemedi! "' + DOSYA_ADI + '" dosyasını kontrol et. (Bulunan: ' + SORULAR.length + ')</span>';
+    el.innerHTML = '<span class="hata-mesaji">⚠️ Soru yüklenemedi! "' + DOSYA_ADI + '" dosyasını kontrol et.</span>';
     if(btn) btn.disabled = true;
   }
 }
@@ -379,12 +369,11 @@ function girisYap(){
 function anaEkranaGec(){
   document.getElementById('hosgeldin').textContent = kullaniciAdi;
   goster('anaEkran');
-  /* ✅ Önce ekranı göster, sonra analizi çiz */
   setTimeout(function(){ analizRender('analizAna'); }, 120);
 }
 
 function kullaniciDegistir(){
-  if(confirm('Kullanıcı değiştirilsin mi? Sınav geçmişin bu tarayıcıda kalır.')){
+  if(confirm('Kullanıcı değiştirilsin mi?')){
     try{ localStorage.removeItem('ekys_user'); }catch(e){}
     location.reload();
   }
@@ -402,7 +391,7 @@ function gecmisiTemizle(){
    ═══════════════════════════════════════════════════════ */
 function sinavBaslat(){
   if(SORULAR.length < SORU_SAYISI){
-    alert('Yeterli soru yüklenmedi. ' + DOSYA_ADI + ' dosyasını kontrol edin.');
+    alert('Yeterli soru yüklenmedi.');
     return;
   }
   var karisik = SORULAR.slice();
@@ -425,11 +414,9 @@ function soruGoster(){
   var s = aktifSinav.sorular[aktifSinav.index];
   aktifSinav.cevaplandi = false;
   aktifSinav.soruZaman = Date.now();
-
   document.getElementById('soruSayaci').textContent = 'Soru ' + (aktifSinav.index + 1) + ' / ' + SORU_SAYISI;
   document.getElementById('soruKategori').textContent = '📚 ' + s.kategori;
   document.getElementById('soruMetni').textContent = s.soru;
-
   var siklarDiv = document.getElementById('siklar');
   siklarDiv.innerHTML = '';
   for(var i=0;i<s.secenekler.length;i++){
@@ -441,15 +428,12 @@ function soruGoster(){
     btn.onclick = (function(idx){ return function(){ cevapla(idx); }; })(i);
     siklarDiv.appendChild(btn);
   }
-
   var gb = document.getElementById('geriBildirim');
   gb.className = 'geri-bildirim';
   gb.innerHTML = '';
-
   var sonrakiBtn = document.getElementById('sonrakiBtn');
   sonrakiBtn.disabled = true;
   sonrakiBtn.textContent = aktifSinav.index === SORU_SAYISI - 1 ? '🏁 Sınavı Bitir' : 'Sonraki Soru';
-
   document.getElementById('ilerleme').style.width = (aktifSinav.index / SORU_SAYISI * 100) + '%';
   window.scrollTo(0,0);
 }
@@ -457,22 +441,17 @@ function soruGoster(){
 function cevapla(i){
   if(!aktifSinav || aktifSinav.cevaplandi) return;
   aktifSinav.cevaplandi = true;
-
   var s = aktifSinav.sorular[aktifSinav.index];
   var secim = String.fromCharCode(65 + i);
   var dogruMu = secim === s.dogru;
   var sure = (Date.now() - aktifSinav.soruZaman) / 1000;
-
   if(dogruMu) aktifSinav.dogru++; else aktifSinav.yanlis++;
-
   var kat = s.kategori;
   if(!aktifSinav.kategoriler[kat]) aktifSinav.kategoriler[kat] = {dogru:0, yanlis:0, toplam:0};
   aktifSinav.kategoriler[kat].toplam++;
   if(dogruMu) aktifSinav.kategoriler[kat].dogru++;
   else aktifSinav.kategoriler[kat].yanlis++;
-
   aktifSinav.cevaplar.push({secim: secim, dogruMu: dogruMu, sure: Math.round(sure), kategori: kat});
-
   var siklar = document.querySelectorAll('#siklar .sik');
   for(var idx=0;idx<siklar.length;idx++){
     siklar[idx].disabled = true;
@@ -480,11 +459,9 @@ function cevapla(i){
     if(harf === s.dogru) siklar[idx].classList.add('dogru');
     else if(idx === i && !dogruMu) siklar[idx].classList.add('yanlis-secim');
   }
-
   var gb = document.getElementById('geriBildirim');
   var dogruIdx = s.dogru.charCodeAt(0) - 65;
   var dogruSik = (dogruIdx >= 0 && dogruIdx < s.secenekler.length) ? s.secenekler[dogruIdx] : s.dogru;
-
   if(dogruMu){
     gb.className = 'geri-bildirim dogru';
     gb.innerHTML = '✔ <strong>Doğru!</strong>';
@@ -492,15 +469,12 @@ function cevapla(i){
     gb.className = 'geri-bildirim yanlis';
     gb.innerHTML = '✘ <strong>Yanlış!</strong> Doğru Cevap: <strong>' + escapeHtml(dogruSik) + '</strong>';
   }
-
   document.getElementById('sonrakiBtn').disabled = false;
 }
 
 function sonrakiSoru(){
   if(!aktifSinav || !aktifSinav.cevaplandi) return;
-  /* ✅ Çift tıklamayı önle */
   document.getElementById('sonrakiBtn').disabled = true;
-
   if(aktifSinav.index < SORU_SAYISI - 1){
     aktifSinav.index++;
     soruGoster();
@@ -510,9 +484,7 @@ function sonrakiSoru(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   ✅ DÜZELTİLMİŞ SINAV BİTİRME
-   Önce ekranı göster, sonra grafikleri çiz.
-   Android'de Chart.js display:none container'da hata veriyordu.
+   SINAV BİTİRME
    ═══════════════════════════════════════════════════════ */
 function sinavBitir(){
   try{
@@ -529,7 +501,6 @@ function sinavBitir(){
     };
     logKaydet(log);
     zamanlayiciDurdur();
-
     var yuzde = Math.round(log.dogru / log.toplam * 100);
     document.getElementById('sonucOzet').innerHTML =
       '<div class="ozet-kart"><div class="deger" style="color:var(--neon-green)">' + log.dogru + '</div><div class="etiket">Doğru</div></div>' +
@@ -537,46 +508,54 @@ function sinavBitir(){
       '<div class="ozet-kart"><div class="deger">' + log.bos + '</div><div class="etiket">Boş</div></div>' +
       '<div class="ozet-kart"><div class="deger" style="color:var(--neon-yellow)">' + sureFormat(log.sure) + '</div><div class="etiket">Süre</div></div>' +
       '<div class="ozet-kart"><div class="deger" style="color:var(--neon-pink)">%' + yuzde + '</div><div class="etiket">Başarı</div></div>';
-
     aktifSinav = null;
-
-    /* ✅ ÖNCE ekranı göster */
     goster('sonucEkrani');
-
-    /* ✅ SONRA analiz render'ı gecikmeli yap (canvas boyut sorunu için) */
     setTimeout(function(){
-      try{ analizRender('analizSonuc'); }
-      catch(e){ console.error('Analiz render hatası:', e); }
+      try{ analizRender('analizSonuc'); }catch(e){ console.error(e); }
     }, 200);
-
   }catch(hata){
     console.error('Sınav bitirme hatası:', hata);
-    alert('Sınav bitirme hatası: ' + hata.message);
     goster('sonucEkrani');
   }
 }
 
 /* ═══════════════════════════════════════════════════════
-   ZAMANLAYICI (fonksiyonel değil, sadece log için)
+   ZAMANLAYICI
    ═══════════════════════════════════════════════════════ */
 function zamanlayiciBaslat(){
   zamanGuncelle();
-  zamanInterval = setInterval(zamanGuncelle, 1000);
+  zamanInterval = setInterval(zamanGuncelle, 250);
 }
 function zamanGuncelle(){
   if(!aktifSinav) return;
-  var sn = Math.floor((Date.now() - aktifSinav.baslangic) / 1000);
+  var gecen = Math.floor((Date.now() - aktifSinav.baslangic) / 1000);
+  var kalan = SINAV_SURESI - gecen;
   var el = document.getElementById('zamanlayici');
-  if(el) el.textContent = sureFormat(sn);
+  if(kalan <= 0){
+    el.textContent = '⏰ 00:00';
+    el.style.color = 'var(--neon-red)';
+    sinavBitir();
+    return;
+  }
+  var m = Math.floor(kalan / 60);
+  var s = kalan % 60;
+  el.textContent = '⏳ ' + (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+  if(kalan <= 10){
+    el.style.color = 'var(--neon-red)';
+    el.style.animation = 'nabiz .5s infinite';
+  } else {
+    el.style.color = 'var(--neon-yellow)';
+    el.style.animation = 'none';
+  }
 }
 function zamanlayiciDurdur(){ if(zamanInterval) clearInterval(zamanInterval); }
 function sureFormat(sn){
   var m = Math.floor(sn / 60), s = sn % 60;
-  return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  return (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
 }
 
 /* ═══════════════════════════════════════════════════════
-   LOG KAYITLARI (localStorage) — try-catch korumalı
+   LOG KAYITLARI
    ═══════════════════════════════════════════════════════ */
 function logKaydet(log){
   try{
@@ -584,8 +563,9 @@ function logKaydet(log){
     var logs = JSON.parse(localStorage.getItem(key) || '[]');
     logs.push(log);
     localStorage.setItem(key, JSON.stringify(logs));
-  }catch(e){ console.error('Log kaydetme hatası:', e); }
+  }catch(e){ console.error(e); }
 }
+
 function getLogs(){
   try{
     if(!kullaniciAdi) return [];
@@ -594,15 +574,70 @@ function getLogs(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   ✅ DÜZELTİLMİŞ ANALİZ RAPORU
-   Chart'lar setTimeout ile çizilir (display:none sorunu)
+   🆕 TÜM KULLANICILARIN LOGLARINI GETİR
+   (Diğer adayların ortalaması için)
+   ═══════════════════════════════════════════════════════ */
+function tumKullaniciLoglariGetir(){
+  var sonuc = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(key.indexOf('ekys_logs_') === 0){
+        var ad = key.substring('ekys_logs_'.length);
+        var logs = JSON.parse(localStorage.getItem(key) || '[]');
+        sonuc.push({ad: ad, logs: logs});
+      }
+    }
+  }catch(e){}
+  return sonuc;
+}
+
+/* 🆕 Diğer adayların ortalama doğru sayısını hesapla */
+function digerAdaylarOrtalamaDogru(){
+  var tumu = tumKullaniciLoglariGetir();
+  var toplamDogru = 0;
+  var toplamSinav = 0;
+  for(var i=0;i<tumu.length;i++){
+    if(tumu[i].ad === kullaniciAdi) continue; // kendini hariç tut
+    for(var j=0;j<tumu[i].logs.length;j++){
+      toplamDogru += tumu[i].logs[j].dogru;
+      toplamSinav++;
+    }
+  }
+  if(toplamSinav === 0) return null;
+  return Math.round((toplamDogru / toplamSinav) * 10) / 10;
+}
+
+/* 🆕 Diğer adayların kategori ortalamalarını hesapla */
+function digerAdaylarKategoriOrtalamalari(){
+  var tumu = tumKullaniciLoglariGetir();
+  var katToplam = {};
+  for(var i=0;i<tumu.length;i++){
+    if(tumu[i].ad === kullaniciAdi) continue;
+    for(var j=0;j<tumu[i].logs.length;j++){
+      var katlar = tumu[i].logs[j].kategoriler;
+      for(var k in katlar){
+        if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
+        katToplam[k].dogru += katlar[k].dogru;
+        katToplam[k].toplam += katlar[k].toplam;
+      }
+    }
+  }
+  var sonuc = {};
+  for(var k2 in katToplam){
+    sonuc[k2] = Math.round(katToplam[k2].dogru / katToplam[k2].toplam * 100);
+  }
+  return sonuc;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANALİZ RAPORU (Diğer adayların ortalaması ile)
    ═══════════════════════════════════════════════════════ */
 function analizRender(containerId){
   var container = document.getElementById(containerId);
   if(!container) return;
   var logs = getLogs();
 
-  /* Eski chart'ları güvenli şekilde yok et */
   for(var key in chartRefs){
     if(chartRefs[key]){
       try{ chartRefs[key].destroy(); }catch(e){}
@@ -621,14 +656,20 @@ function analizRender(containerId){
   var ortSure = Math.round(logs.reduce(function(a,l){return a+l.sure;},0)/toplamSinav);
   var enIyi = Math.max.apply(null, logs.map(function(l){return l.dogru;}));
 
+  /* 🆕 Diğer adayların ortalaması */
+  var digerOrtDogru = digerAdaylarOrtalamaDogru();
+  var digerKatOrt = digerAdaylarKategoriOrtalamalari();
+  var digerVar = (digerOrtDogru !== null);
+
   var katToplam = {};
-  logs.forEach(function(l){
-    for(var k in l.kategoriler){
+  for(var i=0;i<logs.length;i++){
+    var katlar = logs[i].kategoriler;
+    for(var k in katlar){
       if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
-      katToplam[k].dogru += l.kategoriler[k].dogru;
-      katToplam[k].toplam += l.kategoriler[k].toplam;
+      katToplam[k].dogru += katlar[k].dogru;
+      katToplam[k].toplam += katlar[k].toplam;
     }
-  });
+  }
   var katYuzde = {};
   for(var k2 in katToplam){
     katYuzde[k2] = Math.round(katToplam[k2].dogru / katToplam[k2].toplam * 100);
@@ -653,6 +694,18 @@ function analizRender(containerId){
     gelisimMesaji = '📊 Gelişim raporu için en az 2 sınav gereklidir.';
   }
 
+  /* 🆕 Diğer adaylarla karşılaştırma mesajı */
+  var karsilastirmaMesaji = '';
+  if(digerVar){
+    var seninOrt = parseFloat(ortDogru);
+    if(seninOrt > digerOrtDogru){
+      karsilastirmaMesaji = '🏆 Diğer adayların ortalamasının <b style="color:var(--neon-green)">+' + (seninOrt - digerOrtDogru).toFixed(1) + '</b> doğru üzerindesin!';
+    } else if(seninOrt < digerOrtDogru){
+      karsilastirmaMesaji = '⚠️ Diğer adayların ortalamasının <b style="color:var(--neon-red)">' + (seninOrt - digerOrtDogru).toFixed(1) + '</b> doğru altındasın. Daha fazla çalışmalısın!';
+    } else {
+      karsilastirmaMesaji = '➖ Diğer adaylarla aynı seviyedesin.';
+  }
+
   var html = '';
   html += '<div class="ozet-kartlar">' +
     '<div class="ozet-kart"><div class="deger">' + toplamSinav + '</div><div class="etiket">Toplam Sınav</div></div>' +
@@ -660,22 +713,30 @@ function analizRender(containerId){
     '<div class="ozet-kart"><div class="deger">%' + ortYuzde + '</div><div class="etiket">Ortalama Başarı</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + sureFormat(ortSure) + '</div><div class="etiket">Ortalama Süre</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + enIyi + '/' + SORU_SAYISI + '</div><div class="etiket">En İyi Skor</div></div>' +
+    (digerVar ? '<div class="ozet-kart"><div class="deger" style="color:var(--neon-orange)">' + digerOrtDogru + '/' + SORU_SAYISI + '</div><div class="etiket">Diğer Aday Ort.</div></div>' : '') +
     '</div>';
 
-  html += '<div class="panel"><h3>📈 Gelişim Raporu</h3><p style="margin-top:8px;font-size:1.05rem;">' + gelisimMesaji + '</p></div>';
-  html += '<div class="panel"><h3>📉 Başarı Gelişim Grafiği</h3><canvas id="' + containerId + '_gelisim" height="90"></canvas></div>';
-  html += '<div class="panel"><h3>📊 Konu Bazlı Başarı</h3><canvas id="' + containerId + '_kategori" height="' + (Object.keys(katYuzde).length * 26 + 40) + '"></canvas></div>';
+  html += '<div class="panel"><h3>📈 Gelişim Raporu</h3><p style="margin-top:8px;font-size:1.05rem;">' + gelisimMesaji + '</p>';
+  if(karsilastirmaMesaji) html += '<p style="margin-top:6px;font-size:1.05rem;">' + karsilastirmaMesaji + '</p>';
+  html += '</div>';
+
+  html += '<div class="panel"><h3>📉 Başarı Gelişim Grafiği</h3>';
+  if(digerVar) html += '<p class="grafik-not">Mavi çizgi: Senin doğruların | Turuncu çizgi: Diğer adayların ortalaması</p>';
+  html += '<canvas id="' + containerId + '_gelisim" height="90"></canvas></div>';
+
+  html += '<div class="panel"><h3>📊 Konu Bazlı Başarı</h3>';
+  if(digerVar) html += '<p class="grafik-not">Soldaki barlar: Senin başarın | Sağdaki barlar: Diğer adayların ortalaması</p>';
+  html += '<canvas id="' + containerId + '_kategori" height="' + (Object.keys(katYuzde).length * 36 + 40) + '"></canvas></div>';
 
   html += '<div class="panel"><h3>🎯 Eksik Konu Başlıkları (Başarı &lt; %' + EKSIK_ESIGI + ')</h3>';
   if(eksikler.length){
     for(var e=0;e<eksikler.length;e++){
       html += '<div class="eksik-konu">' +
         '<div class="baslik-satir"><span>' + eksikler[e][0] + '</span><span class="yuzde">%' + eksikler[e][1] + '</span></div>' +
-        '<div class="bar-dis"><div class="bar-ic" style="width:' + eksikler[e][1] + '%"></div></div>' +
-        '</div>';
+        '<div class="bar-dis"><div class="bar-ic" style="width:' + eksikler[e][1] + '%"></div></div></div>';
     }
   }else{
-    html += '<p style="color:var(--neon-green);">🎉 Tüm konularda %' + EKSIK_ESIGI + ' üzeri başarı! Harikasın!</p>';
+    html += '<p style="color:var(--neon-green);">🎉 Tüm konularda %' + EKSIK_ESIGI + ' üzeri başarı!</p>';
   }
   html += '</div>';
 
@@ -698,26 +759,22 @@ function analizRender(containerId){
 
   container.innerHTML = html;
 
-  /* ✅ Grafikleri gecikmeli çiz — canvas boyut sorunu için */
+  /* 🆕 Grafik çiz - diğer adayların ortalamasıyla birlikte */
   var grafikLogs = logs.slice(-15);
   setTimeout(function(){
     try{
-      gelisimGrafigiCiz(containerId + '_gelisim', grafikLogs);
-      kategoriGrafigiCiz(containerId + '_kategori', katYuzde);
+      gelisimGrafigiCiz(containerId + '_gelisim', grafikLogs, digerOrtDogru);
+      kategoriGrafigiCiz(containerId + '_kategori', katYuzde, digerKatOrt);
     }catch(grafikHata){
-      console.error('Grafik çizim hatası:', grafikHata);
-      var c1 = document.getElementById(containerId + '_gelisim');
-      var c2 = document.getElementById(containerId + '_kategori');
-      if(c1) c1.outerHTML = '<p class="grafik-yok">📉 Grafik yüklenemedi.</p>';
-      if(c2) c2.outerHTML = '<p class="grafik-yok">📊 Grafik yüklenemedi.</p>';
+      console.error('Grafik hatası:', grafikHata);
     }
   }, 250);
 }
 
 /* ═══════════════════════════════════════════════════════
-   GRAFİKLER (Chart.js)
+   🆕 GELİŞİM GRAFİĞİ (Diğer adayların ortalaması ile)
    ═══════════════════════════════════════════════════════ */
-function gelisimGrafigiCiz(canvasId, logs){
+function gelisimGrafigiCiz(canvasId, logs, digerOrt){
   var ctx = document.getElementById(canvasId);
   if(!ctx || typeof Chart === 'undefined') return;
   var labels = [];
@@ -726,17 +783,40 @@ function gelisimGrafigiCiz(canvasId, logs){
     labels.push('#' + (i+1));
     data.push(logs[i].dogru);
   }
+
+  var datasets = [{
+    label: 'Senin Doğruların',
+    data: data,
+    borderColor: '#00fff7',
+    backgroundColor: 'rgba(0,255,247,.15)',
+    fill: true,
+    tension: .35,
+    pointBackgroundColor: '#ff00ff',
+    pointBorderColor: '#ff00ff',
+    pointRadius: 5,
+    borderWidth: 3
+  }];
+
+  /* 🆕 Diğer adayların ortalaması - yatay çizgi */
+  if(digerOrt !== null){
+    var ortData = [];
+    for(var i=0;i<labels.length;i++) ortData.push(digerOrt);
+    datasets.push({
+      label: 'Diğer Adayların Ortalaması (' + digerOrt + ')',
+      data: ortData,
+      borderColor: '#ff9f1c',
+      backgroundColor: 'rgba(255,159,28,.1)',
+      fill: false,
+      tension: 0,
+      pointRadius: 0,
+      borderWidth: 2,
+      borderDash: [8, 4]
+    });
+  }
+
   chartRefs[canvasId] = new Chart(ctx, {
     type: 'line',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'Doğru Sayısı', data: data,
-        borderColor: '#00fff7', backgroundColor: 'rgba(0,255,247,.15)',
-        fill: true, tension: .35,
-        pointBackgroundColor: '#ff00ff', pointBorderColor: '#ff00ff', pointRadius: 5
-      }]
-    },
+    data: { labels: labels, datasets: datasets },
     options: {
       responsive: true,
       plugins: { legend: { labels: { color: '#9fd8ff' } } },
@@ -748,29 +828,91 @@ function gelisimGrafigiCiz(canvasId, logs){
   });
 }
 
-function kategoriGrafigiCiz(canvasId, katYuzde){
+/* ═══════════════════════════════════════════════════════
+   🆕 KATEGORİ GRAFİĞİ (Diğer adayların ortalaması ile)
+   ═══════════════════════════════════════════════════════ */
+function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
   var ctx = document.getElementById(canvasId);
   if(!ctx || typeof Chart === 'undefined') return;
   var labels = Object.keys(katYuzde);
-  var data = [];
-  var renkler = [];
+  var dataSen = [];
+  var renklerSen = [];
   for(var i=0;i<labels.length;i++){
-    data.push(katYuzde[labels[i]]);
-    renkler.push(NEON_RENKLER[i % NEON_RENKLER.length]);
+    dataSen.push(katYuzde[labels[i]]);
+    renklerSen.push(NEON_RENKLER[i % NEON_RENKLER.length]);
   }
+
+  var datasets = [{
+    label: 'Senin Başarın',
+    data: dataSen,
+    backgroundColor: renklerSen,
+    borderColor: renklerSen,
+    borderWidth: 2
+  }];
+
+  /* 🆕 Diğer adayların kategori ortalaması */
+  var digerVar = false;
+  if(digerKatOrt && Object.keys(digerKatOrt).length > 0){
+    var dataDiger = [];
+    for(var i=0;i<labels.length;i++){
+      dataDiger.push(digerKatOrt[labels[i]] !== undefined ? digerKatOrt[labels[i]] : 0);
+    }
+    datasets.push({
+      label: 'Diğer Adayların Ortalaması',
+      data: dataDiger,
+      backgroundColor: 'rgba(255,159,28,.6)',
+      borderColor: '#ff9f1c',
+      borderWidth: 2
+    });
+    digerVar = true;
+  }
+
   chartRefs[canvasId] = new Chart(ctx, {
     type: 'bar',
-    data: { labels: labels, datasets: [{ label:'Başarı %', data: data, backgroundColor: renkler, borderColor: renkler, borderWidth: 2 }] },
+    data: { labels: labels, datasets: datasets },
     options: {
       indexAxis: 'y',
       responsive: true,
-      plugins: { legend: { display:false } },
+      plugins: { legend: { labels: { color: '#9fd8ff' } } },
       scales: {
         x: { min:0, max:100, ticks:{color:'#9fd8ff', callback:function(v){return '%'+v;}}, grid:{color:'rgba(255,0,255,.12)'} },
         y: { ticks:{color:'#e8faff', font:{size:11}}, grid:{display:false} }
       }
     }
   });
+}
+
+/* ═══════════════════════════════════════════════════════
+   ANONİM SIRALAMA TABLOSU
+   ═══════════════════════════════════════════════════════ */
+function liderlikTablosuRender(containerId){
+  var container = document.getElementById(containerId);
+  if(!container) return;
+  var kullanicilar = tumKullaniciLoglariGetir();
+  if(!kullanicilar.length){ container.innerHTML = ''; return; }
+  var skorlar = [];
+  for(var i=0;i<kullanicilar.length;i++){
+    var logs = kullanicilar[i].logs;
+    if(!logs.length) continue;
+    var enIyi = 0, toplamYuzde = 0;
+    for(var j=0;j<logs.length;j++){
+      var yuzde = Math.round(logs[j].dogru / logs[j].toplam * 100);
+      if(yuzde > enIyi) enIyi = yuzde;
+      toplamYuzde += yuzde;
+    }
+    skorlar.push({ ad: kullanicilar[i].ad, enIyi: enIyi, ort: Math.round(toplamYuzde/logs.length), sinav: logs.length });
+  }
+  skorlar.sort(function(a,b){ return b.enIyi - a.enIyi; });
+  var html = '<div class="panel"><h3>🏆 Anonim Sıralama Tablosu</h3>';
+  html += '<table><thead><tr><th>Sıra</th><th>Rumuz</th><th>En İyi</th><th>Ortalama</th><th>Sınav</th></tr></thead><tbody>';
+  for(var i=0;i<skorlar.length;i++){
+    var aktif = skorlar[i].ad === kullaniciAdi;
+    var stil = aktif ? ' style="color:var(--neon-green);font-weight:bold;text-shadow:0 0 8px var(--neon-green);"' : '';
+    var etiket = aktif ? ' ← SİZ' : '';
+    html += '<tr' + stil + '><td>' + (i+1) + '</td><td>Aday #' + (i+1) + etiket + '</td><td>%' + skorlar[i].enIyi + '</td><td>%' + skorlar[i].ort + '</td><td>' + skorlar[i].sinav + '</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
 }
 
 /* ═══════════════════════════════════════════════════════

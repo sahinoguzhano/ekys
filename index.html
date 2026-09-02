@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>EKYS Denemeler v1.4 (Bulut Senkronizasyonlu)</title>
+<title>EKYS Denmeler v1.4</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<!-- Supabase V2 Kütüphanesi -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --neon-cyan:#00fff7;--neon-pink:#ff00ff;--neon-green:#39ff14;
@@ -88,6 +87,11 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 .bilgi-mesaji{color:var(--muted)}
 .giris-kart{max-width:420px;margin:12vh auto;text-align:center}
 .grafik-not{color:var(--muted);font-size:.78rem;margin-top:6px;font-style:italic}
+.yukleniyor{text-align:center;padding:30px;color:var(--neon-cyan);font-size:1.1rem;
+  text-shadow:0 0 10px var(--neon-cyan);animation:nabiz 1.5s infinite}
+.baglanti-durumu{font-size:.75rem;padding:4px 10px;border-radius:999px;display:inline-block;margin-top:8px}
+.baglanti-durumu.online{color:var(--neon-green);border:1px solid var(--neon-green);text-shadow:0 0 6px var(--neon-green)}
+.baglanti-durumu.offline{color:var(--neon-orange);border:1px solid var(--neon-orange);text-shadow:0 0 6px var(--neon-orange)}
 .footer{
   text-align:center;
   padding:30px 18px 40px;
@@ -108,20 +112,21 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 <!-- GİRİŞ -->
 <div id="girisEkrani" class="ekran">
   <div class="panel giris-kart">
-    <h1 class="neon-baslik">⚡ EKYS Denemeler v1.4</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4</h1>
     <p style="margin:14px 0 22px;color:var(--muted);">Maarif Modeli • Müdür &amp; Müdür Yardımcılığı Deneme Sınavı</p>
     <input type="text" id="kullaniciAdiInput" placeholder="Kullanıcı adını yaz..." maxlength="30"
            onkeydown="if(event.key==='Enter')girisYap()"/>
     <div style="margin-top:18px">
       <button type="button" class="btn yesil" onclick="girisYap()">🚀 Başla</button>
     </div>
+    <div id="girisBaglantiDurumu"></div>
   </div>
 </div>
 
 <!-- ANA EKRAN -->
 <div id="anaEkran" class="ekran">
   <div class="ust-bar">
-    <h1 class="neon-baslik">⚡ EKYS Denemeler v1.4</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4</h1>
     <span class="rozet">👤 <span id="hosgeldin"></span></span>
   </div>
   <div class="panel">
@@ -130,14 +135,17 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
       <span id="soruDurumu" class="bilgi-mesaji">Sorular yükleniyor...</span>
     </div>
     <p class="bilgi-mesaji" style="margin-bottom:14px">
-      Her soru cevaplandığında doğru cevap anında gösterilir. Süre 5 dakikadır, süre bitince sınav otomatik biter. Sınav sonu verileriniz buluta senkronize edilir.
+      Her soru cevaplandığında doğru cevap anında gösterilir. Süre 5 dakikadır, süre bitince sınav otomatik biter.
     </p>
-    <button type="button" class="btn yesil" id="baslatBtn" onclick="sinavBaslat()" disabled>🚀 Deneme Sınavına Başla</button>
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+      <button type="button" class="btn yesil" id="baslatBtn" onclick="sinavBaslat()" disabled>🚀 Deneme Sınavına Başla</button>
+      <span id="anaBaglantiDurumu"></span>
+    </div>
   </div>
   <h2>📊 Önceki Sınavların Analizi</h2>
-  <div id="analizAna"></div>
+  <div id="analizAna"><div class="yukleniyor">⏳ Veriler yükleniyor...</div></div>
   <div class="alt-butonlar">
-    <button type="button" class="btn pembe kucuk" onclick="gecmisiTemizle()">🗑️ Geçmişimi Temizle (Bulut)</button>
+    <button type="button" class="btn pembe kucuk" onclick="gecmisiTemizle()">🗑️ Geçmişi Temizle</button>
     <button type="button" class="btn kucuk" onclick="kullaniciDegistir()">👤 Kullanıcı Değiştir</button>
   </div>
 </div>
@@ -169,7 +177,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
   <h1 class="neon-baslik" style="margin-bottom:18px">🏁 Sınav Tamamlandı!</h1>
   <div id="sonucOzet" class="ozet-kartlar"></div>
   <h2>📊 Genel Gelişim Analizin</h2>
-  <div id="analizSonuc"></div>
+  <div id="analizSonuc"><div class="yukleniyor">⏳ Analiz hazırlanıyor...</div></div>
   <div class="alt-butonlar">
     <button type="button" class="btn yesil" onclick="sinavBaslat()">🔄 Yeni Deneme Çöz</button>
     <button type="button" class="btn" onclick="anaEkranaGec()">🏠 Ana Menü</button>
@@ -206,16 +214,59 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 })();
 
 /* ═══════════════════════════════════════════════════════
-   AYARLAR & SUPABASE YAPILANDIRMASI
+   🔌 SUPABASE BAĞLANTISI
+   ═══════════════════════════════════════════════════════ */
+var SUPABASE_URL = 'https://bkkgtzmanztzufjfmqev.supabase.co';
+var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJra2d0em1hbnp0enVmamZtcWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNjE5MjIsImV4cCI6MjEwMzkzNzkyMn0.fNu2uQFjWcrvIl7izBNcCYFlZ0vJvVzTzg_Yl9kzSD0';
+
+var supabaseClient = null;
+var supabaseBagli = false;
+
+function supabaseInit(){
+  try{
+    if(typeof supabase !== 'undefined' && supabase.createClient){
+      supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      return supabaseBaglantiTest();
+    }
+  }catch(e){
+    console.error('Supabase init hatası:', e);
+  }
+  supabaseBagli = false;
+  return Promise.resolve(false);
+}
+
+function supabaseBaglantiTest(){
+  if(!supabaseClient) { supabaseBagli = false; return Promise.resolve(false); }
+  return supabaseClient
+    .from('sinav_loglari')
+    .select('id', {count:'exact', head:true})
+    .then(function(res){
+      supabaseBagli = !res.error;
+      return supabaseBagli;
+    })
+    .catch(function(){
+      supabaseBagli = false;
+      return false;
+    });
+}
+
+function baglantiDurumuGoster(elementId){
+  var el = document.getElementById(elementId);
+  if(!el) return;
+  if(supabaseBagli){
+    el.innerHTML = '<span class="baglanti-durumu online">☁️ Bulut bağlı</span>';
+  }else{
+    el.innerHTML = '<span class="baglanti-durumu offline">💾 Yerel mod</span>';
+  }
+}
+
+/* ═══════════════════════════════════════════════════════
+   AYARLAR
    ═══════════════════════════════════════════════════════ */
 var DOSYA_ADI = 'sorular.txt';
 var SORU_SAYISI = 10;
 var SINAV_SURESI = 300;
 var EKSIK_ESIGI = 70;
-
-const supabaseUrl = 'https://bkkgtzmanztzufjfmqev.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJra2d0em1hbnp0enVmamZtcWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNjE5MjIsImV4cCI6MjEwMzkzNzkyMn0.fNu2uQFjWcrvIl7izBNcCYFlZ0vJvVzTzg_Yl9kzSD0';
-const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 /* ═══════════════════════════════════════════════════════
    KATEGORİ TANIMLARI
@@ -259,14 +310,13 @@ var KATEGORILER = [
 var NEON_RENKLER = ['#00fff7','#ff00ff','#39ff14','#f5f500','#ff6ec7','#00ff9f','#ff9f1c','#7b68ee'];
 
 /* ═══════════════════════════════════════════════════════
-   GENEL DURUM & VERİTABANI ÖNBELLEĞİ
+   GENEL DURUM
    ═══════════════════════════════════════════════════════ */
 var SORULAR = [];
 var aktifSinav = null;
 var kullaniciAdi = '';
 var zamanInterval = null;
 var chartRefs = {};
-var TUM_LOGLAR = []; // Supabase'den çekilen tüm loglar
 
 try { kullaniciAdi = localStorage.getItem('ekys_user') || ''; } catch(e) { kullaniciAdi = ''; }
 
@@ -274,7 +324,9 @@ try { kullaniciAdi = localStorage.getItem('ekys_user') || ''; } catch(e) { kulla
    BAŞLATMA
    ═══════════════════════════════════════════════════════ */
 window.addEventListener('DOMContentLoaded', function(){
-  Promise.all([verileriSupabasedenCek(), sorulariYukle()]).then(function(){
+  Promise.all([sorulariYukle(), supabaseInit()]).then(function(){
+    baglantiDurumuGoster('girisBaglantiDurumu');
+    baglantiDurumuGoster('anaBaglantiDurumu');
     if(kullaniciAdi) anaEkranaGec();
     else goster('girisEkrani');
   });
@@ -286,77 +338,6 @@ function goster(id){
   var el = document.getElementById(id);
   if(el) el.classList.add('aktif');
   window.scrollTo(0,0);
-}
-
-/* ═══════════════════════════════════════════════════════
-   VERİTABANI (SUPABASE) İŞLEMLERİ
-   ═══════════════════════════════════════════════════════ */
-async function verileriSupabasedenCek() {
-  try {
-    const { data, error } = await supabase
-      .from('sinav_loglari')
-      .select('*')
-      .order('tarih', { ascending: true });
-    
-    if (error) throw error;
-    if (data) TUM_LOGLAR = data;
-  } catch (e) {
-    console.error("Supabase veri çekme hatası:", e);
-  }
-}
-
-async function logKaydet(log) {
-  try {
-    // 1. Yerel yedeğe (LocalStorage) kaydet
-    var key = 'ekys_logs_' + kullaniciAdi;
-    var localLogs = JSON.parse(localStorage.getItem(key) || '[]');
-    localLogs.push(log);
-    localStorage.setItem(key, JSON.stringify(localLogs));
-
-    // 2. Supabase'e gönder
-    const { error } = await supabase.from('sinav_loglari').insert([{
-      kullanici_adi: log.kullanici_adi,
-      tarih: log.tarih,
-      sure: log.sure,
-      dogru: log.dogru,
-      yanlis: log.yanlis,
-      bos: log.bos,
-      toplam: log.toplam,
-      kategoriler: log.kategoriler,
-      cevaplar: log.cevaplar
-    }]);
-
-    if (error) {
-      console.error("Supabase kayıt hatası:", error);
-    } else {
-      // 3. Veritabanını güncelleyerek grafiklere yansıt
-      await verileriSupabasedenCek(); 
-    }
-  } catch(e) { 
-    console.error(e); 
-  }
-}
-
-function getLogs() {
-  if(!kullaniciAdi) return [];
-  // Supabase'den gelen global listeden filtrele
-  return TUM_LOGLAR.filter(l => l.kullanici_adi === kullaniciAdi);
-}
-
-function tumKullaniciLoglariGetir() {
-  var grouped = {};
-  for (var i = 0; i < TUM_LOGLAR.length; i++) {
-    var l = TUM_LOGLAR[i];
-    var ad = l.kullanici_adi;
-    if (!grouped[ad]) grouped[ad] = [];
-    grouped[ad].push(l);
-  }
-  
-  var sonuc = [];
-  for (var ad in grouped) {
-    sonuc.push({ad: ad, logs: grouped[ad]});
-  }
-  return sonuc;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -388,7 +369,7 @@ function parseSoruMetni(txt){
   for(var i=0;i<satirlar.length;i++){
     buffer += satirlar[i].trim() + ' ';
     if(/doğru cevap\s*:/i.test(buffer)){
-      var parsed = parseSoruBloğu(buffer);
+      var parsed = parseSoruBlogu(buffer);
       if(parsed) sorular.push(parsed);
       buffer = '';
     }
@@ -396,7 +377,7 @@ function parseSoruMetni(txt){
   return sorular;
 }
 
-function parseSoruBloğu(blok){
+function parseSoruBlogu(blok){
   try{
     var dogruMatch = blok.match(/doğru cevap\s*:\s*([A-E])/i);
     if(!dogruMatch) return null;
@@ -460,7 +441,7 @@ function soruDurumuGuncelle(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   KULLANICI GİRİŞİ & YÖNETİMİ
+   KULLANICI GİRİŞİ
    ═══════════════════════════════════════════════════════ */
 function girisYap(){
   var ad = document.getElementById('kullaniciAdiInput').value.trim();
@@ -470,13 +451,12 @@ function girisYap(){
   anaEkranaGec();
 }
 
-async function anaEkranaGec(){
+function anaEkranaGec(){
   document.getElementById('hosgeldin').textContent = kullaniciAdi;
+  baglantiDurumuGoster('anaBaglantiDurumu');
   goster('anaEkran');
-  document.getElementById('analizAna').innerHTML = '<div class="panel" style="text-align:center;color:var(--neon-cyan);">Buluttan veriler senkronize ediliyor... ⏳</div>';
-  
-  await verileriSupabasedenCek(); // Ana ekrana her dönüşte veritabanını tazele
-  analizRender('analizAna');
+  document.getElementById('analizAna').innerHTML = '<div class="yukleniyor">⏳ Veriler yükleniyor...</div>';
+  setTimeout(function(){ analizRender('analizAna'); }, 120);
 }
 
 function kullaniciDegistir(){
@@ -486,19 +466,18 @@ function kullaniciDegistir(){
   }
 }
 
-async function gecmisiTemizle(){
-  if(confirm('Tüm sınav geçmişiniz silinsin mi? (Bu işlem Supabase bulutundan da kalıcı olarak siler)')){
-    document.getElementById('analizAna').innerHTML = '<div class="panel" style="text-align:center;color:var(--neon-red);">Bulut verileriniz siliniyor... 🗑️</div>';
-    
-    // Yerelden sil
-    try{ localStorage.removeItem('ekys_logs_' + kullaniciAdi); }catch(e){}
-    
-    // Buluttan sil
-    try {
-      await supabase.from('sinav_loglari').delete().eq('kullanici_adi', kullaniciAdi);
-      await verileriSupabasedenCek(); // Tüm logları tekrar güncelle
-    } catch(e) { console.error(e); }
-    
+function gecmisiTemizle(){
+  if(!confirm('Tüm sınav geçmişin silinsin mi?\n(Bulut kayıtları da silinecektir)')) return;
+  try{ localStorage.removeItem('ekys_logs_' + kullaniciAdi); }catch(e){}
+  /* Supabase'den de sil */
+  if(supabaseBagli && supabaseClient){
+    supabaseClient
+      .from('sinav_loglari')
+      .delete()
+      .eq('kullanici_adi', kullaniciAdi)
+      .then(function(){ analizRender('analizAna'); })
+      .catch(function(){ analizRender('analizAna'); });
+  }else{
     analizRender('analizAna');
   }
 }
@@ -615,7 +594,7 @@ function sonrakiSoru(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   ⏱️ ZAMANLAYICI (5 dakika geri sayım)
+   ⏱️ ZAMANLAYICI
    ═══════════════════════════════════════════════════════ */
 function zamanlayiciBaslat(){
   zamanGuncelle();
@@ -662,9 +641,9 @@ function sinavdanCik(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   🏁 SINAV BİTİRME (Async Supabase Kayıt)
+   🏁 SINAV BİTİRME
    ═══════════════════════════════════════════════════════ */
-async function sinavBitir(){
+function sinavBitir(){
   if(!aktifSinav) return;
   zamanlayiciDurdur();
 
@@ -674,7 +653,6 @@ async function sinavBitir(){
     aktifSinav.bos = cevaplanmamis;
 
     var log = {
-      kullanici_adi: kullaniciAdi,
       tarih: new Date().toISOString(),
       sure: toplamSure,
       dogru: aktifSinav.dogru,
@@ -684,18 +662,7 @@ async function sinavBitir(){
       kategoriler: aktifSinav.kategoriler,
       cevaplar: aktifSinav.cevaplar
     };
-    
-    aktifSinav = null; // Çifte tıklamayı engelle
 
-    // Bekleme Ekranı Gösterimi
-    goster('sonucEkrani');
-    document.getElementById('sonucOzet').innerHTML = '<div class="ozet-kart" style="width:100%;"><div class="deger" style="color:var(--neon-cyan);font-size:1.2rem;">Buluta Kaydediliyor... ⏳</div></div>';
-    document.getElementById('analizSonuc').innerHTML = '';
-
-    // Supabase'e Yazılmasını Bekle
-    await logKaydet(log);
-
-    // Başarıyla Kaydedildi, Sonuçları Çiz
     var yuzde = Math.round(log.dogru / log.toplam * 100);
     document.getElementById('sonucOzet').innerHTML =
       '<div class="ozet-kart"><div class="deger" style="color:var(--neon-green)">' + log.dogru + '</div><div class="etiket">Doğru</div></div>' +
@@ -704,9 +671,16 @@ async function sinavBitir(){
       '<div class="ozet-kart"><div class="deger" style="color:var(--neon-yellow)">' + sureFormat(log.sure) + '</div><div class="etiket">Süre</div></div>' +
       '<div class="ozet-kart"><div class="deger" style="color:var(--neon-pink)">%' + yuzde + '</div><div class="etiket">Başarı</div></div>';
 
-    setTimeout(function(){
-      try{ analizRender('analizSonuc'); }catch(e){ console.error(e); }
-    }, 200);
+    aktifSinav = null;
+    goster('sonucEkrani');
+    document.getElementById('analizSonuc').innerHTML = '<div class="yukleniyor">⏳ Analiz hazırlanıyor...</div>';
+
+    /* Önce kaydet, sonra analiz */
+    logKaydet(log).then(function(){
+      setTimeout(function(){
+        try{ analizRender('analizSonuc'); }catch(e){ console.error(e); }
+      }, 200);
+    });
 
   }catch(hata){
     console.error('Sınav bitirme hatası:', hata);
@@ -716,13 +690,151 @@ async function sinavBitir(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   📊 ANALİZ RAPORU (Buluttan gelen verilerle)
+   LOG KAYITLARI (localStorage + Supabase)
+   ═══════════════════════════════════════════════════════ */
+function logKaydet(log){
+  /* localStorage'a kaydet (yedek) */
+  try{
+    var key = 'ekys_logs_' + kullaniciAdi;
+    var logs = JSON.parse(localStorage.getItem(key) || '[]');
+    logs.push(log);
+    localStorage.setItem(key, JSON.stringify(logs));
+  }catch(e){ console.error('localStorage kayıt hatası:', e); }
+
+  /* Supabase'e kaydet */
+  if(supabaseBagli && supabaseClient){
+    return supabaseClient
+      .from('sinav_loglari')
+      .insert({
+        kullanici_adi: kullaniciAdi,
+        tarih: log.tarih,
+        sure: log.sure,
+        dogru: log.dogru,
+        yanlis: log.yanlis,
+        bos: log.bos,
+        toplam: log.toplam,
+        kategoriler: log.kategoriler,
+        cevaplar: log.cevaplar
+      })
+      .then(function(res){
+        if(res.error){
+          console.error('Supabase kayıt hatası:', res.error);
+        }else{
+          console.log('✅ Supabase kayıt başarılı');
+        }
+      })
+      .catch(function(e){
+        console.error('Supabase kayıt hatası:', e);
+      });
+  }
+  return Promise.resolve();
+}
+
+/* Kullanıcının kendi loglarını getir */
+function getLogs(){
+  if(supabaseBagli && supabaseClient){
+    return supabaseClient
+      .from('sinav_loglari')
+      .select('*')
+      .eq('kullanici_adi', kullaniciAdi)
+      .order('tarih', {ascending: true})
+      .then(function(res){
+        if(res.error || !res.data){
+          console.error('Supabase okuma hatası:', res.error);
+          return getLogsLocal();
+        }
+        return res.data.map(function(row){
+          return {
+            tarih: row.tarih,
+            sure: row.sure,
+            dogru: row.dogru,
+            yanlis: row.yanlis,
+            bos: row.bos,
+            toplam: row.toplam,
+            kategoriler: row.kategoriler || {},
+            cevaplar: row.cevaplar || []
+          };
+        });
+      })
+      .catch(function(e){
+        console.error('Supabase okuma hatası:', e);
+        return getLogsLocal();
+      });
+  }
+  return Promise.resolve(getLogsLocal());
+}
+
+function getLogsLocal(){
+  try{
+    if(!kullaniciAdi) return [];
+    return JSON.parse(localStorage.getItem('ekys_logs_' + kullaniciAdi) || '[]');
+  }catch(e){ return []; }
+}
+
+/* Tüm kullanıcı loglarını getir (Supabase'den) */
+function tumKullaniciLoglariGetir(){
+  if(supabaseBagli && supabaseClient){
+    return supabaseClient
+      .from('sinav_loglari')
+      .select('*')
+      .order('tarih', {ascending: true})
+      .then(function(res){
+        if(res.error || !res.data){
+          console.error('Supabase tüm veri hatası:', res.error);
+          return tumKullaniciLoglariLocal();
+        }
+        /* Kullanıcı bazlı grupla */
+        var gruplar = {};
+        for(var i=0;i<res.data.length;i++){
+          var row = res.data[i];
+          var ad = row.kullanici_adi;
+          if(!gruplar[ad]) gruplar[ad] = [];
+          gruplar[ad].push({
+            tarih: row.tarih,
+            sure: row.sure,
+            dogru: row.dogru,
+            yanlis: row.yanlis,
+            bos: row.bos,
+            toplam: row.toplam,
+            kategoriler: row.kategoriler || {},
+            cevaplar: row.cevaplar || []
+          });
+        }
+        var sonuc = [];
+        for(var k in gruplar){
+          sonuc.push({ad: k, logs: gruplar[k]});
+        }
+        return sonuc;
+      })
+      .catch(function(e){
+        console.error('Supabase tüm veri hatası:', e);
+        return tumKullaniciLoglariLocal();
+      });
+  }
+  return Promise.resolve(tumKullaniciLoglariLocal());
+}
+
+function tumKullaniciLoglariLocal(){
+  var sonuc = [];
+  try{
+    for(var i=0;i<localStorage.length;i++){
+      var key = localStorage.key(i);
+      if(key.indexOf('ekys_logs_') === 0){
+        var ad = key.substring('ekys_logs_'.length);
+        var logs = JSON.parse(localStorage.getItem(key) || '[]');
+        if(logs.length) sonuc.push({ad: ad, logs: logs});
+      }
+    }
+  }catch(e){}
+  return sonuc;
+}
+
+/* ═══════════════════════════════════════════════════════
+   📊 ANALİZ RAPORU (Asenkron – Supabase destekli)
    ═══════════════════════════════════════════════════════ */
 function analizRender(containerId){
   var container = document.getElementById(containerId);
   if(!container) return;
-  
-  var logs = getLogs();
 
   for(var key in chartRefs){
     if(chartRefs[key]){
@@ -730,6 +842,25 @@ function analizRender(containerId){
       chartRefs[key] = null;
     }
   }
+
+  container.innerHTML = '<div class="yukleniyor">⏳ Veriler yükleniyor...</div>';
+
+  /* Her iki veri kaynağını paralel çek */
+  Promise.all([getLogs(), tumKullaniciLoglariGetir()])
+    .then(function(sonuclar){
+      var logs = sonuclar[0];
+      var tumKullanicilar = sonuclar[1];
+      analizRenderData(containerId, logs, tumKullanicilar);
+    })
+    .catch(function(e){
+      console.error('Analiz yükleme hatası:', e);
+      container.innerHTML = '<div class="panel hata-mesaji">⚠️ Analiz yüklenirken hata oluştu.</div>';
+    });
+}
+
+function analizRenderData(containerId, logs, tumKullanicilar){
+  var container = document.getElementById(containerId);
+  if(!container) return;
 
   if(!logs.length){
     container.innerHTML = '<div class="panel" style="text-align:center;color:#9fd8ff;">📊 Henüz kayıtlı sınav yok. İlk denemeni başlat!</div>';
@@ -743,8 +874,8 @@ function analizRender(containerId){
   var enIyi = Math.max.apply(null, logs.map(function(l){return l.dogru;}));
 
   /* Diğer adayların ortalaması */
-  var digerOrtDogru = digerAdaylarOrtalamaDogru();
-  var digerKatOrt = digerAdaylarKategoriOrtalamalari();
+  var digerOrtDogru = hesaplaDigerOrt(tumKullanicilar);
+  var digerKatOrt = hesaplaDigerKatOrt(tumKullanicilar);
   var digerVar = (digerOrtDogru !== null);
 
   /* Kullanıcının kategori ortalamaları */
@@ -830,7 +961,7 @@ function analizRender(containerId){
   html += '</div>';
 
   /* Anonim sıralama tablosu */
-  html += liderlikTablosuHtml();
+  html += liderlikTablosuHtml(tumKullanicilar);
 
   /* Son sınavlar */
   var sonLogs = logs.slice(-5).reverse();
@@ -850,6 +981,15 @@ function analizRender(containerId){
   }
   html += '</tbody></table></div>';
 
+  /* Bağlantı durumu bilgisi */
+  html += '<div style="text-align:center;margin-top:10px;">';
+  if(supabaseBagli){
+    html += '<span class="baglanti-durumu online">☁️ Bulut verileri kullanılıyor</span>';
+  }else{
+    html += '<span class="baglanti-durumu offline">💾 Yerel veriler kullanılıyor (bulut bağlantısı yok)</span>';
+  }
+  html += '</div>';
+
   container.innerHTML = html;
 
   /* Grafikleri gecikmeli çiz */
@@ -865,48 +1005,14 @@ function analizRender(containerId){
 }
 
 /* ═══════════════════════════════════════════════════════
-   🏆 ANONİM SIRALAMA TABLOSU
+   DİĞER ADAYLARIN ORTALAMALARI (veri parametre olarak gelir)
    ═══════════════════════════════════════════════════════ */
-function liderlikTablosuHtml(){
-  var kullanicilar = tumKullaniciLoglariGetir();
-  if(!kullanicilar.length) return '';
-
-  var skorlar = [];
-  for(var i=0;i<kullanicilar.length;i++){
-    var logs = kullanicilar[i].logs;
-    var enIyi = 0, toplamYuzde = 0;
-    for(var j=0;j<logs.length;j++){
-      var yuzde = Math.round(logs[j].dogru / logs[j].toplam * 100);
-      if(yuzde > enIyi) enIyi = yuzde;
-      toplamYuzde += yuzde;
-    }
-    skorlar.push({ ad: kullanicilar[i].ad, enIyi: enIyi, ort: Math.round(toplamYuzde/logs.length), sinav: logs.length });
-  }
-  skorlar.sort(function(a,b){ return b.enIyi - a.enIyi; });
-
-  var html = '<div class="panel"><h3>🏆 Anonim Sıralama Tablosu (Bulut)</h3>';
-  html += '<p class="grafik-not">Kimlikler gizlidir. Sıralama en iyi skora göre yapılır.</p>';
-  html += '<table><thead><tr><th>Sıra</th><th>Rumuz</th><th>En İyi</th><th>Ortalama</th><th>Sınav</th></tr></thead><tbody>';
-  for(var i=0;i<skorlar.length;i++){
-    var aktif = skorlar[i].ad === kullaniciAdi;
-    var stil = aktif ? ' style="color:var(--neon-green);font-weight:bold;text-shadow:0 0 8px var(--neon-green);"' : '';
-    var etiket = aktif ? ' ← SİZ' : '';
-    html += '<tr' + stil + '><td>' + (i+1) + '</td><td>Aday #' + (i+1) + etiket + '</td><td>%' + skorlar[i].enIyi + '</td><td>%' + skorlar[i].ort + '</td><td>' + skorlar[i].sinav + '</td></tr>';
-  }
-  html += '</tbody></table></div>';
-  return html;
-}
-
-/* ═══════════════════════════════════════════════════════
-   DİĞER ADAYLARIN ORTALAMALARI
-   ═══════════════════════════════════════════════════════ */
-function digerAdaylarOrtalamaDogru(){
-  var tumu = tumKullaniciLoglariGetir();
+function hesaplaDigerOrt(tumKullanicilar){
   var toplamDogru = 0, toplamSinav = 0;
-  for(var i=0;i<tumu.length;i++){
-    if(tumu[i].ad === kullaniciAdi) continue;
-    for(var j=0;j<tumu[i].logs.length;j++){
-      toplamDogru += tumu[i].logs[j].dogru;
+  for(var i=0;i<tumKullanicilar.length;i++){
+    if(tumKullanicilar[i].ad === kullaniciAdi) continue;
+    for(var j=0;j<tumKullanicilar[i].logs.length;j++){
+      toplamDogru += tumKullanicilar[i].logs[j].dogru;
       toplamSinav++;
     }
   }
@@ -914,13 +1020,12 @@ function digerAdaylarOrtalamaDogru(){
   return Math.round((toplamDogru / toplamSinav) * 10) / 10;
 }
 
-function digerAdaylarKategoriOrtalamalari(){
-  var tumu = tumKullaniciLoglariGetir();
+function hesaplaDigerKatOrt(tumKullanicilar){
   var katToplam = {};
-  for(var i=0;i<tumu.length;i++){
-    if(tumu[i].ad === kullaniciAdi) continue;
-    for(var j=0;j<tumu[i].logs.length;j++){
-      var katlar = tumu[i].logs[j].kategoriler;
+  for(var i=0;i<tumKullanicilar.length;i++){
+    if(tumKullanicilar[i].ad === kullaniciAdi) continue;
+    for(var j=0;j<tumKullanicilar[i].logs.length;j++){
+      var katlar = tumKullanicilar[i].logs[j].kategoriler;
       for(var k in katlar){
         if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
         katToplam[k].dogru += katlar[k].dogru;
@@ -933,6 +1038,39 @@ function digerAdaylarKategoriOrtalamalari(){
     sonuc[k2] = Math.round(katToplam[k2].dogru / katToplam[k2].toplam * 100);
   }
   return sonuc;
+}
+
+/* ═══════════════════════════════════════════════════════
+   🏆 ANONİM SIRALAMA TABLOSU
+   ═══════════════════════════════════════════════════════ */
+function liderlikTablosuHtml(tumKullanicilar){
+  if(!tumKullanicilar || !tumKullanicilar.length) return '';
+
+  var skorlar = [];
+  for(var i=0;i<tumKullanicilar.length;i++){
+    var logs = tumKullanicilar[i].logs;
+    var enIyi = 0, toplamYuzde = 0;
+    for(var j=0;j<logs.length;j++){
+      var yuzde = Math.round(logs[j].dogru / logs[j].toplam * 100);
+      if(yuzde > enIyi) enIyi = yuzde;
+      toplamYuzde += yuzde;
+    }
+    skorlar.push({ ad: tumKullanicilar[i].ad, enIyi: enIyi, ort: Math.round(toplamYuzde/logs.length), sinav: logs.length });
+  }
+  skorlar.sort(function(a,b){ return b.enIyi - a.enIyi; });
+
+  var html = '<div class="panel"><h3>🏆 Anonim Sıralama Tablosu</h3>';
+  html += '<p class="grafik-not">Kimlikler gizlidir. Sıralama en iyi skora göre yapılır.' +
+    (supabaseBagli ? ' <strong style="color:var(--neon-green);">(Tüm cihazlardan veriler)</strong>' : '') + '</p>';
+  html += '<table><thead><tr><th>Sıra</th><th>Rumuz</th><th>En İyi</th><th>Ortalama</th><th>Sınav</th></tr></thead><tbody>';
+  for(var i=0;i<skorlar.length;i++){
+    var aktif = skorlar[i].ad === kullaniciAdi;
+    var stil = aktif ? ' style="color:var(--neon-green);font-weight:bold;text-shadow:0 0 8px var(--neon-green);"' : '';
+    var etiket = aktif ? ' ← SİZ' : '';
+    html += '<tr' + stil + '><td>' + (i+1) + '</td><td>Aday #' + (i+1) + etiket + '</td><td>%' + skorlar[i].enIyi + '</td><td>%' + skorlar[i].ort + '</td><td>' + skorlar[i].sinav + '</td></tr>';
+  }
+  html += '</tbody></table></div>';
+  return html;
 }
 
 /* ═══════════════════════════════════════════════════════
@@ -1010,7 +1148,6 @@ function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
     borderWidth: 2
   }];
 
-  var digerVar = false;
   if(digerKatOrt && Object.keys(digerKatOrt).length > 0){
     var dataDiger = [];
     for(var i=0;i<labels.length;i++){
@@ -1023,7 +1160,6 @@ function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
       borderColor: '#ff9f1c',
       borderWidth: 2
     });
-    digerVar = true;
   }
 
   chartRefs[canvasId] = new Chart(ctx, {

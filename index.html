@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>EKYS Denmeler v1.4.1</title>
+<title>EKYS Denmeler v1.4.2</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
@@ -122,7 +122,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 <!-- GİRİŞ -->
 <div id="girisEkrani" class="ekran">
   <div class="panel giris-kart">
-    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4.1</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4.2</h1>
     <p style="margin:14px 0 22px;color:var(--muted);">Maarif Modeli • Müdür &amp; Müdür Yardımcılığı Deneme Sınavı</p>
     <input type="text" id="kullaniciAdiInput" placeholder="Kullanıcı adını yaz..." maxlength="30"
            onkeydown="if(event.key==='Enter')girisYap()"/>
@@ -136,7 +136,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 <!-- ANA EKRAN -->
 <div id="anaEkran" class="ekran">
   <div class="ust-bar">
-    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4.1</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4.2</h1>
     <span class="rozet">👤 <span id="hosgeldin"></span></span>
   </div>
   <div class="panel">
@@ -145,7 +145,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
       <span id="soruDurumu" class="bilgi-mesaji">Sorular yükleniyor...</span>
     </div>
     <p class="bilgi-mesaji" style="margin-bottom:14px">
-      Her soru cevaplandığında doğru cevap anında gösterilir. Süre 5 dakikadır, süre bitince sınav otomatik biter.
+      Her soru cevaplandığında doğru cevap anında gösterilir. Şıklar her sınavda karışır. Süre 5 dakikadır.
     </p>
     <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
       <button type="button" class="btn yesil" id="baslatBtn" onclick="sinavBaslat()" disabled>🚀 Deneme Sınavına Başla</button>
@@ -451,6 +451,58 @@ function soruDurumuGuncelle(){
 }
 
 /* ═══════════════════════════════════════════════════════
+   🎲 ŞIKLARI KARIŞTIR (YENİ - v1.4.2)
+   ─────────────────────────────────────────────────────
+   Her sorunun A-E şıklarını rastgele karıştırır ve doğru
+   cevap harfini yeni pozisyona göre günceller.
+   ═══════════════════════════════════════════════════════ */
+function siklariKaristir(orjSoru){
+  /* Şık metinlerini "A) " prefix'i olmadan al */
+  var siklarTemiz = orjSoru.secenekler.map(function(s){
+    return s.replace(/^[A-E]\)\s*/, '');
+  });
+
+  /* Doğru cevabın orijinal indeks ve metni */
+  var dogruIdx = orjSoru.dogru.charCodeAt(0) - 65;
+  if(dogruIdx < 0 || dogruIdx >= siklarTemiz.length){
+    /* Geçersiz doğru cevap: orijinali döndür */
+    return {
+      soru: orjSoru.soru,
+      secenekler: orjSoru.secenekler.slice(),
+      dogru: orjSoru.dogru,
+      kategori: orjSoru.kategori
+    };
+  }
+  var dogruMetin = siklarTemiz[dogruIdx];
+
+  /* Fisher-Yates karıştırma */
+  for(var i = siklarTemiz.length - 1; i > 0; i--){
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = siklarTemiz[i];
+    siklarTemiz[i] = siklarTemiz[j];
+    siklarTemiz[j] = tmp;
+  }
+
+  /* Yeni harflendirme ve doğru cevabın yeni pozisyonu */
+  var yeniSecenekler = [];
+  var yeniDogru = orjSoru.dogru;
+  for(var k = 0; k < siklarTemiz.length; k++){
+    var harf = String.fromCharCode(65 + k);
+    yeniSecenekler.push(harf + ') ' + siklarTemiz[k]);
+    if(siklarTemiz[k] === dogruMetin){
+      yeniDogru = harf;
+    }
+  }
+
+  return {
+    soru: orjSoru.soru,
+    secenekler: yeniSecenekler,
+    dogru: yeniDogru,
+    kategori: orjSoru.kategori
+  };
+}
+
+/* ═══════════════════════════════════════════════════════
    KULLANICI GİRİŞİ
    ═══════════════════════════════════════════════════════ */
 function girisYap(){
@@ -499,13 +551,17 @@ function sinavBaslat(){
     alert('Yeterli soru yüklenmedi.');
     return;
   }
+  /* 1. Soruları karıştır */
   var karisik = SORULAR.slice();
   for(var i = karisik.length - 1; i > 0; i--){
     var j = Math.floor(Math.random() * (i + 1));
     var tmp = karisik[i]; karisik[i] = karisik[j]; karisik[j] = tmp;
   }
+  /* 2. İlk N tanesini al ve HER BİRİNİN ŞIKLARINI DA KARIŞTIR */
+  var secilenler = karisik.slice(0, SORU_SAYISI).map(siklariKaristir);
+
   aktifSinav = {
-    sorular: karisik.slice(0, SORU_SAYISI),
+    sorular: secilenler,
     index: 0, dogru: 0, yanlis: 0, bos: 0,
     baslangic: Date.now(), soruZaman: Date.now(),
     cevaplar: [], kategoriler: {}, cevaplandi: false
@@ -883,7 +939,6 @@ function analizRenderData(containerId, logs, tumKullanicilar){
         : '<div class="kutu"><span class="baglanti-durumu offline" style="font-size:.85rem;">💾 Yerel Mod</span></div>') +
     '</div>';
 
-  /* Kullanıcının kendi logu yoksa yine genel istatistiği göster */
   if(!logs.length){
     container.innerHTML = genelIstatistikHtml +
       '<div class="panel" style="text-align:center;color:#9fd8ff;">📊 Henüz kayıtlı sınavınız yok. İlk denemeni başlat!</div>';

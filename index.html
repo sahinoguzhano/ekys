@@ -222,6 +222,47 @@ var SINAV_SURESI = 300; // 5 dakika = 300 saniye
 var EKSIK_ESIGI = 70;
 
 /* ═══════════════════════════════════════════════════════
+   KATEGORİ TANIMLARI
+   ═══════════════════════════════════════════════════════ */
+var KATEGORILER = [
+  {ad:'Türkiye Yüzyılı Maarif Modeli', anahtar:['maarif','tymm','erdem','eylem','değerler eğitimi','bağlam temelli',
+    'sarmal müfredat','yeterlik','kamil insan','fıtrat','medeniyet','kültürel hafıza','varlık tasavvuru',
+    'bilgi tasavvuru','öğrenme ekosistemi','iyi insan','dünya okulu','kültürel şifre']},
+  {ad:'Öğrenme Psikolojisi ve Kuramlar', anahtar:['piaget','vygotsky','bloom','maslow','kohlberg','erikson','bandura',
+    'koşullanma','gagne','ausubel','bruner','skinner','pavlov','thorndike','gestalt','rogers','freud','kuram',
+    'taksonomi','gelişim dönemi','öğrenme kuramı','yapılandırmacılık','tyler','dengeleme','zed','öz-yeterlik',
+    'edimsel','klasik koşullanma','etki yasası','ileri düzenleyici','keşfederek öğrenme','programlı öğretim']},
+  {ad:'Eğitim Teknolojileri', anahtar:['yapay zeka','dijital vatandaş','eğitim bilişim ağı','eba','sanal gerçeklik',
+    'artırılmış gerçeklik','bulut bilişim','oyunlaştırma','mobil öğrenme','büyük veri','nesnelerin interneti',
+    'eğitim teknolojisi','teknoloji','dijital','internet','vr','ar','iot','big data','cloud','ters yüz edilmiş sınıf',
+    'flipped','canlı sınıf']},
+  {ad:'Rehberlik ve Özel Eğitim', anahtar:['rehberlik','bep','kaynaştırma','akran zorbalığı','özel eğitim',
+    'psikolojik danışma','sociometri','intihar','özel gereksinim','üstün yetenekli','öğrenme güçlüğü','otizm',
+    'dikkat eksikliği','bireyselleştirilmiş','ram','özdek','destek eğitim odası']},
+  {ad:'Ölçme ve Değerlendirme', anahtar:['ölçme','değerlendirme','geçerlik','güvenirlik','rubrik','portfolyo',
+    'madde güçlük','ayırt edicilik','biçimlendirici','summatif','norm referanslı','kriter referanslı','test','madde',
+    'standart sapma','medyan','mod','çeyrek sapma','analitik rubrik','bütüncül rubrik']},
+  {ad:'Mevzuat ve Yönetmelikler', anahtar:['1739','kanun','yönetmelik','yönerge','tevhid-i tedrisat','anayasa',
+    'disiplin','okul-aile birliği','öğretmenlik meslek kanunu','mevzuat','ek ders','okul genel kurulu',
+    'sınıf geçme','devamsızlık','bağış','kınama','uyarı cezası','öğrenci meclisi','sosyal etkinlikler',
+    'destekleme ve yetiştirme','okul spor','özel öğretim kurumları','stratejik plan','kalite güvencesi']},
+  {ad:'Okul Yönetimi ve Liderlik', anahtar:['müdür','yönetici','liderlik','çatışma','motivasyon','örgüt','karar',
+    'iklim','kültür','yetki devri','performans','stratejik','okul gelişim','zaman yönetimi','değişim yönetimi',
+    'hesap verebilirlik','şeffaflık','paydaş','denetim','swot','ogp','oys','e-yakın','yyp','dağıtılmış liderlik',
+    'dönüşümcü liderlik','durumsal liderlik','pedagojik liderlik','dönüşümcü','hersey','blanchard','bass','senge',
+    'sistem düşüncesi','beşinci disiplin','duygusal zeka','eq','grup düşünmesi','uzlaşma','işbirlikçi',
+    'eisenhower','vroom','beklenti kuramı','içsel motivasyon','örgüt iklimi','örgütsel öğrenme','öğrenen örgüt',
+    'etik ikilem','etik liderlik','kriz yönetimi','veriye dayalı','paydaş analizi']},
+  {ad:'Eğitim Felsefesi ve Toplumu', anahtar:['felsefe','pragmatizm','idealizm','sosyoloji','freire','dewey',
+    'montessori','gizli müfredat','çokkültürlülük','demokratik okul','eşitlik','fırsat eşitliği','kapsayıcılık',
+    'yaşam boyu öğrenme','ilerlemeci eğitim','ezilenlerin pedagojisi','göreceli eşitlik','hakkaniyet',
+    'varoluşçuluk','fonksiyonalizm','sembolik etkileşimcilik','çatışma kuramı','küresel vatandaşlık',
+    'sürdürülebilir kalkınma','insan hakları','çocuk hakları']}
+];
+
+var NEON_RENKLER = ['#00fff7','#ff00ff','#39ff14','#f5f500','#ff6ec7','#00ff9f','#ff9f1c','#7b68ee'];
+
+/* ═══════════════════════════════════════════════════════
    GENEL DURUM
    ═══════════════════════════════════════════════════════ */
 var SORULAR = [];
@@ -337,9 +378,20 @@ function parseSoruBloğu(blok){
       soru: soruMetni,
       secenekler: secenekler.slice(0,5),
       dogru: dogru,
-      kategori: 'Genel' // Basitleştirildi, istenirse kategori belirleme eklenebilir
+      kategori: kategoriBelirle(soruMetni + ' ' + secenekler.join(' '))
     };
   }catch(e){ return null; }
+}
+
+function kategoriBelirle(metin){
+  var kucuk = metin.toLowerCase();
+  for(var i=0;i<KATEGORILER.length;i++){
+    var anahtarlar = KATEGORILER[i].anahtar;
+    for(var j=0;j<anahtarlar.length;j++){
+      if(kucuk.indexOf(anahtarlar[j]) !== -1) return KATEGORILER[i].ad;
+    }
+  }
+  return 'Genel Eğitim Bilimleri';
 }
 
 function soruDurumuGuncelle(){
@@ -420,6 +472,7 @@ function soruGoster(){
   aktifSinav.soruZaman = Date.now();
 
   document.getElementById('soruSayaci').textContent = 'Soru ' + (aktifSinav.index + 1) + ' / ' + SORU_SAYISI;
+  document.getElementById('soruKategori').textContent = '📚 ' + s.kategori;
   document.getElementById('soruMetni').textContent = s.soru;
 
   var siklarDiv = document.getElementById('siklar');
@@ -457,7 +510,13 @@ function cevapla(i){
 
   if(dogruMu) aktifSinav.dogru++; else aktifSinav.yanlis++;
 
-  aktifSinav.cevaplar.push({secim: secim, dogruMu: dogruMu, sure: Math.round(sure)});
+  var kat = s.kategori;
+  if(!aktifSinav.kategoriler[kat]) aktifSinav.kategoriler[kat] = {dogru:0, yanlis:0, toplam:0};
+  aktifSinav.kategoriler[kat].toplam++;
+  if(dogruMu) aktifSinav.kategoriler[kat].dogru++;
+  else aktifSinav.kategoriler[kat].yanlis++;
+
+  aktifSinav.cevaplar.push({secim: secim, dogruMu: dogruMu, sure: Math.round(sure), kategori: kat});
 
   var siklar = document.querySelectorAll('#siklar .sik');
   for(var idx=0;idx<siklar.length;idx++){
@@ -476,7 +535,7 @@ function cevapla(i){
     gb.innerHTML = '✔ <strong>Doğru!</strong>';
   }else{
     gb.className = 'geri-bildirim yanlis';
-    gb.innerHTML = '✘ <strong>Yanlış!</strong> Doğru Cevap: <strong>' + dogruSik + '</strong>';
+    gb.innerHTML = '✘ <strong>Yanlış!</strong> Doğru Cevap: <strong>' + escapeHtml(dogruSik) + '</strong>';
   }
 
   document.getElementById('sonrakiBtn').disabled = false;
@@ -707,6 +766,50 @@ async function analizRender(containerId){
     digerOrtDogru = Math.round((toplamDigerDogru / toplamDigerSinav) * 10) / 10;
   }
 
+  // Kategori analizi - kullanıcı
+  var katToplam = {};
+  if(benimToplamSinav > 0){
+    for(var i=0;i<benimLoglarim.length;i++){
+      var katlar = benimLoglarim[i].kategoriler;
+      for(var k in katlar){
+        if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
+        katToplam[k].dogru += katlar[k].dogru;
+        katToplam[k].toplam += katlar[k].toplam;
+      }
+    }
+  }
+  var katYuzde = {};
+  for(var k2 in katToplam){
+    katYuzde[k2] = Math.round(katToplam[k2].dogru / katToplam[k2].toplam * 100);
+  }
+
+  // Diğer adayların kategori ortalamaları
+  var digerKatOrt = {};
+  if(toplamDigerSinav > 0){
+    var digerKatToplam = {};
+    for(var i=0; i<tumKullanicilar.length; i++){
+      if(tumKullanicilar[i].ad === kullaniciAdi) continue;
+      for(var j=0; j<tumKullanicilar[i].logs.length; j++){
+        var katlar = tumKullanicilar[i].logs[j].kategoriler;
+        for(var k in katlar){
+          if(!digerKatToplam[k]) digerKatToplam[k] = {dogru:0, toplam:0};
+          digerKatToplam[k].dogru += katlar[k].dogru;
+          digerKatToplam[k].toplam += katlar[k].toplam;
+        }
+      }
+    }
+    for(var k in digerKatToplam){
+      digerKatOrt[k] = Math.round(digerKatToplam[k].dogru / digerKatToplam[k].toplam * 100);
+    }
+  }
+
+  // Eksik konular
+  var eksikler = [];
+  for(var k in katYuzde){
+    if(katYuzde[k] < EKSIK_ESIGI) eksikler.push([k, katYuzde[k]]);
+  }
+  eksikler.sort(function(a,b){ return a[1]-b[1]; });
+
   var gelisimMesaji = '';
   if(benimToplamSinav >= 2){
     var yaris = Math.floor(benimToplamSinav / 2);
@@ -750,6 +853,22 @@ async function analizRender(containerId){
   if(digerOrtDogru !== null) html += '<p class="grafik-not">Mavi çizgi: Senin doğruların | Turuncu kesikli çizgi: Diğer adayların ortalaması</p>';
   html += '<canvas id="' + containerId + '_gelisim" height="90"></canvas></div>';
 
+  html += '<div class="panel"><h3>📊 Konu Bazlı Başarı</h3>';
+  if(digerOrtDogru !== null) html += '<p class="grafik-not">Renkli barlar: Senin başarın | Turuncu barlar: Diğer adayların ortalaması</p>';
+  html += '<canvas id="' + containerId + '_kategori" height="' + (Object.keys(katYuzde).length * 36 + 40) + '"></canvas></div>';
+
+  html += '<div class="panel"><h3>🎯 Eksik Konu Başlıkları (Başarı &lt; %' + EKSIK_ESIGI + ')</h3>';
+  if(eksikler.length){
+    for(var e=0;e<eksikler.length;e++){
+      html += '<div class="eksik-konu">' +
+        '<div class="baslik-satir"><span>' + eksikler[e][0] + '</span><span class="yuzde">%' + eksikler[e][1] + '</span></div>' +
+        '<div class="bar-dis"><div class="bar-ic" style="width:' + eksikler[e][1] + '%"></div></div></div>';
+    }
+  }else{
+    html += '<p style="color:var(--neon-green);">🎉 Tüm konularda %' + EKSIK_ESIGI + ' üzeri başarı!</p>';
+  }
+  html += '</div>';
+
   // Anonim sıralama tablosu
   html += await liderlikTablosuHtml(tumKullanicilar);
 
@@ -780,6 +899,7 @@ async function analizRender(containerId){
   setTimeout(function(){
     try{
       gelisimGrafigiCiz(containerId + '_gelisim', grafikLogs, digerOrtDogru);
+      kategoriGrafigiCiz(containerId + '_kategori', katYuzde, digerKatOrt);
     }catch(grafikHata){
       console.error('Grafik hatası:', grafikHata);
     }
@@ -829,6 +949,8 @@ async function liderlikTablosuHtml(tumKullanicilar){
 function gelisimGrafigiCiz(canvasId, logs, digerOrt){
   var ctx = document.getElementById(canvasId);
   if(!ctx || typeof Chart === 'undefined') return;
+  if(!logs.length) return; // Eğer log yoksa grafik çizme
+
   var labels = [];
   var data = [];
   for(var i=0;i<logs.length;i++){
@@ -879,12 +1001,68 @@ function gelisimGrafigiCiz(canvasId, logs, digerOrt){
   });
 }
 
+function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
+  var ctx = document.getElementById(canvasId);
+  if(!ctx || typeof Chart === 'undefined') return;
+  var labels = Object.keys(katYuzde);
+  if(!labels.length) return; // Eğer kategori verisi yoksa grafik çizme
+
+  var dataSen = [];
+  var renklerSen = [];
+  for(var i=0;i<labels.length;i++){
+    dataSen.push(katYuzde[labels[i]]);
+    renklerSen.push(NEON_RENKLER[i % NEON_RENKLER.length]);
+  }
+
+  var datasets = [{
+    label: 'Senin Başarın',
+    data: dataSen,
+    backgroundColor: renklerSen,
+    borderColor: renklerSen,
+    borderWidth: 2
+  }];
+
+  if(digerKatOrt && Object.keys(digerKatOrt).length > 0){
+    var dataDiger = [];
+    for(var i=0;i<labels.length;i++){
+      dataDiger.push(digerKatOrt[labels[i]] !== undefined ? digerKatOrt[labels[i]] : 0);
+    }
+    datasets.push({
+      label: 'Diğer Adayların Ortalaması',
+      data: dataDiger,
+      backgroundColor: 'rgba(255,159,28,.6)',
+      borderColor: '#ff9f1c',
+      borderWidth: 2
+    });
+  }
+
+  chartRefs[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: { labels: labels, datasets: datasets },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { labels: { color: '#9fd8ff' } } },
+      scales: {
+        x: { min:0, max:100, ticks:{color:'#9fd8ff', callback:function(v){return '%'+v;}}, grid:{color:'rgba(255,0,255,.12)'} },
+        y: { ticks:{color:'#e8faff', font:{size:11}}, grid:{display:false} }
+      }
+    }
+  });
+}
+
 /* ═══════════════════════════════════════════════════════
    YARDIMCI FONKSİYONLAR
    ═══════════════════════════════════════════════════════ */
 function sureFormat(sn){
   var m = Math.floor(sn / 60), s = sn % 60;
   return (m<10?'0':'') + m + ':' + (s<10?'0':'') + s;
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
 }
 </script>
 </body>

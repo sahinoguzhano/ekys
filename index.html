@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>EKYS Denmeler v1.4</title>
+<title>EKYS Denmeler v1.4.1</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
@@ -73,6 +73,15 @@ input[type=text]:focus{box-shadow:0 0 24px rgba(0,255,247,.55)}
   background:rgba(20,0,25,.35);box-shadow:0 0 12px rgba(255,0,255,.22)}
 .ozet-kart .deger{font-size:1.7rem;font-weight:800;color:var(--neon-cyan);text-shadow:0 0 10px var(--neon-cyan)}
 .ozet-kart .etiket{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-top:4px}
+.genel-istatistik{background:linear-gradient(135deg,rgba(255,159,28,.15),rgba(255,0,255,.1));
+  border:1px solid var(--neon-orange);border-radius:14px;padding:16px;margin-bottom:18px;
+  display:flex;flex-wrap:wrap;gap:20px;justify-content:center;align-items:center;
+  box-shadow:0 0 20px rgba(255,159,28,.25)}
+.genel-istatistik .kutu{text-align:center;padding:8px 16px}
+.genel-istatistik .kutu .say{font-size:2rem;font-weight:800;color:var(--neon-orange);
+  text-shadow:0 0 12px var(--neon-orange),0 0 24px rgba(255,159,28,.5);display:block}
+.genel-istatistik .kutu .aciklama{font-size:.78rem;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1.5px;margin-top:4px}
 .eksik-konu{margin:12px 0}
 .eksik-konu .baslik-satir{display:flex;justify-content:space-between;margin-bottom:5px;font-size:.95rem}
 .eksik-konu .yuzde{color:var(--neon-red);font-weight:800;text-shadow:0 0 8px rgba(255,32,121,.7)}
@@ -104,7 +113,8 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 }
 .footer .mail{color:var(--neon-cyan);text-shadow:0 0 8px var(--neon-cyan);}
 .footer .tarih{color:var(--neon-pink);text-shadow:0 0 8px var(--neon-pink);}
-@media(max-width:600px){h1{font-size:1.4rem}#zamanlayici{font-size:1.3rem}.ozet-kart .deger{font-size:1.3rem}}
+@media(max-width:600px){h1{font-size:1.4rem}#zamanlayici{font-size:1.3rem}.ozet-kart .deger{font-size:1.3rem}
+  .genel-istatistik .kutu .say{font-size:1.5rem}}
 </style>
 </head>
 <body>
@@ -112,7 +122,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 <!-- GİRİŞ -->
 <div id="girisEkrani" class="ekran">
   <div class="panel giris-kart">
-    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4.1</h1>
     <p style="margin:14px 0 22px;color:var(--muted);">Maarif Modeli • Müdür &amp; Müdür Yardımcılığı Deneme Sınavı</p>
     <input type="text" id="kullaniciAdiInput" placeholder="Kullanıcı adını yaz..." maxlength="30"
            onkeydown="if(event.key==='Enter')girisYap()"/>
@@ -126,7 +136,7 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 <!-- ANA EKRAN -->
 <div id="anaEkran" class="ekran">
   <div class="ust-bar">
-    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4</h1>
+    <h1 class="neon-baslik">⚡ EKYS Denmeler v1.4.1</h1>
     <span class="rozet">👤 <span id="hosgeldin"></span></span>
   </div>
   <div class="panel">
@@ -469,7 +479,6 @@ function kullaniciDegistir(){
 function gecmisiTemizle(){
   if(!confirm('Tüm sınav geçmişin silinsin mi?\n(Bulut kayıtları da silinecektir)')) return;
   try{ localStorage.removeItem('ekys_logs_' + kullaniciAdi); }catch(e){}
-  /* Supabase'den de sil */
   if(supabaseBagli && supabaseClient){
     supabaseClient
       .from('sinav_loglari')
@@ -675,7 +684,6 @@ function sinavBitir(){
     goster('sonucEkrani');
     document.getElementById('analizSonuc').innerHTML = '<div class="yukleniyor">⏳ Analiz hazırlanıyor...</div>';
 
-    /* Önce kaydet, sonra analiz */
     logKaydet(log).then(function(){
       setTimeout(function(){
         try{ analizRender('analizSonuc'); }catch(e){ console.error(e); }
@@ -693,7 +701,6 @@ function sinavBitir(){
    LOG KAYITLARI (localStorage + Supabase)
    ═══════════════════════════════════════════════════════ */
 function logKaydet(log){
-  /* localStorage'a kaydet (yedek) */
   try{
     var key = 'ekys_logs_' + kullaniciAdi;
     var logs = JSON.parse(localStorage.getItem(key) || '[]');
@@ -701,7 +708,6 @@ function logKaydet(log){
     localStorage.setItem(key, JSON.stringify(logs));
   }catch(e){ console.error('localStorage kayıt hatası:', e); }
 
-  /* Supabase'e kaydet */
   if(supabaseBagli && supabaseClient){
     return supabaseClient
       .from('sinav_loglari')
@@ -730,7 +736,6 @@ function logKaydet(log){
   return Promise.resolve();
 }
 
-/* Kullanıcının kendi loglarını getir */
 function getLogs(){
   if(supabaseBagli && supabaseClient){
     return supabaseClient
@@ -771,7 +776,6 @@ function getLogsLocal(){
   }catch(e){ return []; }
 }
 
-/* Tüm kullanıcı loglarını getir (Supabase'den) */
 function tumKullaniciLoglariGetir(){
   if(supabaseBagli && supabaseClient){
     return supabaseClient
@@ -783,7 +787,6 @@ function tumKullaniciLoglariGetir(){
           console.error('Supabase tüm veri hatası:', res.error);
           return tumKullaniciLoglariLocal();
         }
-        /* Kullanıcı bazlı grupla */
         var gruplar = {};
         for(var i=0;i<res.data.length;i++){
           var row = res.data[i];
@@ -830,7 +833,7 @@ function tumKullaniciLoglariLocal(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   📊 ANALİZ RAPORU (Asenkron – Supabase destekli)
+   📊 ANALİZ RAPORU
    ═══════════════════════════════════════════════════════ */
 function analizRender(containerId){
   var container = document.getElementById(containerId);
@@ -845,7 +848,6 @@ function analizRender(containerId){
 
   container.innerHTML = '<div class="yukleniyor">⏳ Veriler yükleniyor...</div>';
 
-  /* Her iki veri kaynağını paralel çek */
   Promise.all([getLogs(), tumKullaniciLoglariGetir()])
     .then(function(sonuclar){
       var logs = sonuclar[0];
@@ -862,8 +864,29 @@ function analizRenderData(containerId, logs, tumKullanicilar){
   var container = document.getElementById(containerId);
   if(!container) return;
 
+  /* ── GENEL PLATFORM İSTATİSTİKLERİ ── */
+  var toplamAday = tumKullanicilar ? tumKullanicilar.length : 0;
+  var toplamSinavGenel = 0;
+  if(tumKullanicilar){
+    for(var ti=0; ti<tumKullanicilar.length; ti++){
+      toplamSinavGenel += tumKullanicilar[ti].logs.length;
+    }
+  }
+  var genelIstatistikHtml =
+    '<div class="genel-istatistik">' +
+      '<div class="kutu"><span class="say">👥 ' + toplamAday + '</span>' +
+        '<div class="aciklama">Toplam Aday</div></div>' +
+      '<div class="kutu"><span class="say">📝 ' + toplamSinavGenel + '</span>' +
+        '<div class="aciklama">Toplam Çözülen Sınav</div></div>' +
+      (supabaseBagli
+        ? '<div class="kutu"><span class="baglanti-durumu online" style="font-size:.85rem;">☁️ Bulut Aktif</span></div>'
+        : '<div class="kutu"><span class="baglanti-durumu offline" style="font-size:.85rem;">💾 Yerel Mod</span></div>') +
+    '</div>';
+
+  /* Kullanıcının kendi logu yoksa yine genel istatistiği göster */
   if(!logs.length){
-    container.innerHTML = '<div class="panel" style="text-align:center;color:#9fd8ff;">📊 Henüz kayıtlı sınav yok. İlk denemeni başlat!</div>';
+    container.innerHTML = genelIstatistikHtml +
+      '<div class="panel" style="text-align:center;color:#9fd8ff;">📊 Henüz kayıtlı sınavınız yok. İlk denemeni başlat!</div>';
     return;
   }
 
@@ -873,12 +896,10 @@ function analizRenderData(containerId, logs, tumKullanicilar){
   var ortSure = Math.round(logs.reduce(function(a,l){return a+l.sure;},0)/toplamSinav);
   var enIyi = Math.max.apply(null, logs.map(function(l){return l.dogru;}));
 
-  /* Diğer adayların ortalaması */
   var digerOrtDogru = hesaplaDigerOrt(tumKullanicilar);
   var digerKatOrt = hesaplaDigerKatOrt(tumKullanicilar);
   var digerVar = (digerOrtDogru !== null);
 
-  /* Kullanıcının kategori ortalamaları */
   var katToplam = {};
   for(var i=0;i<logs.length;i++){
     var katlar = logs[i].kategoriler;
@@ -899,7 +920,6 @@ function analizRenderData(containerId, logs, tumKullanicilar){
   }
   eksikler.sort(function(a,b){ return a[1]-b[1]; });
 
-  /* Gelişim mesajı */
   var gelisimMesaji = '';
   if(logs.length >= 2){
     var yaris = Math.floor(logs.length / 2);
@@ -913,7 +933,6 @@ function analizRenderData(containerId, logs, tumKullanicilar){
     gelisimMesaji = '📊 Gelişim raporu için en az 2 sınav gereklidir.';
   }
 
-  /* Karşılaştırma mesajı */
   var karsilastirmaMesaji = '';
   if(digerVar){
     var seninOrt = parseFloat(ortDogru);
@@ -926,9 +945,11 @@ function analizRenderData(containerId, logs, tumKullanicilar){
     }
   }
 
-  var html = '';
+  var html = genelIstatistikHtml;
+
+  html += '<h3 style="color:var(--neon-cyan);margin:8px 0 12px;text-shadow:0 0 8px rgba(0,255,247,.6);">📌 Senin İstatistiklerin</h3>';
   html += '<div class="ozet-kartlar">' +
-    '<div class="ozet-kart"><div class="deger">' + toplamSinav + '</div><div class="etiket">Toplam Sınav</div></div>' +
+    '<div class="ozet-kart"><div class="deger">' + toplamSinav + '</div><div class="etiket">Sınavın</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + ortDogru + '/' + SORU_SAYISI + '</div><div class="etiket">Ortalama Doğru</div></div>' +
     '<div class="ozet-kart"><div class="deger">%' + ortYuzde + '</div><div class="etiket">Ortalama Başarı</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + sureFormat(ortSure) + '</div><div class="etiket">Ortalama Süre</div></div>' +
@@ -960,10 +981,8 @@ function analizRenderData(containerId, logs, tumKullanicilar){
   }
   html += '</div>';
 
-  /* Anonim sıralama tablosu */
   html += liderlikTablosuHtml(tumKullanicilar);
 
-  /* Son sınavlar */
   var sonLogs = logs.slice(-5).reverse();
   html += '<div class="panel"><h3>🗂️ Son Sınavlar</h3><table><thead><tr>' +
     '<th>Tarih</th><th>Süre</th><th>Doğru</th><th>Yanlış</th><th>Başarı</th></tr></thead><tbody>';
@@ -981,18 +1000,8 @@ function analizRenderData(containerId, logs, tumKullanicilar){
   }
   html += '</tbody></table></div>';
 
-  /* Bağlantı durumu bilgisi */
-  html += '<div style="text-align:center;margin-top:10px;">';
-  if(supabaseBagli){
-    html += '<span class="baglanti-durumu online">☁️ Bulut verileri kullanılıyor</span>';
-  }else{
-    html += '<span class="baglanti-durumu offline">💾 Yerel veriler kullanılıyor (bulut bağlantısı yok)</span>';
-  }
-  html += '</div>';
-
   container.innerHTML = html;
 
-  /* Grafikleri gecikmeli çiz */
   var grafikLogs = logs.slice(-15);
   setTimeout(function(){
     try{
@@ -1005,7 +1014,7 @@ function analizRenderData(containerId, logs, tumKullanicilar){
 }
 
 /* ═══════════════════════════════════════════════════════
-   DİĞER ADAYLARIN ORTALAMALARI (veri parametre olarak gelir)
+   DİĞER ADAYLARIN ORTALAMALARI
    ═══════════════════════════════════════════════════════ */
 function hesaplaDigerOrt(tumKullanicilar){
   var toplamDogru = 0, toplamSinav = 0;

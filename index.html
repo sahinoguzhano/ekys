@@ -3,11 +3,10 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
-<title>EKYS Denemeler v1.4</title>
-<!-- Supabase JS Kütüphanesi -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Chart.js Kütüphanesi -->
+<title>EKYS Denemeler v1.4 (Bulut Senkronizasyonlu)</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<!-- Supabase V2 Kütüphanesi -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --neon-cyan:#00fff7;--neon-pink:#ff00ff;--neon-green:#39ff14;
@@ -131,14 +130,14 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
       <span id="soruDurumu" class="bilgi-mesaji">Sorular yükleniyor...</span>
     </div>
     <p class="bilgi-mesaji" style="margin-bottom:14px">
-      Her soru cevaplandığında doğru cevap anında gösterilir. Süre 5 dakikadır, süre bitince sınav otomatik biter.
+      Her soru cevaplandığında doğru cevap anında gösterilir. Süre 5 dakikadır, süre bitince sınav otomatik biter. Sınav sonu verileriniz buluta senkronize edilir.
     </p>
     <button type="button" class="btn yesil" id="baslatBtn" onclick="sinavBaslat()" disabled>🚀 Deneme Sınavına Başla</button>
   </div>
   <h2>📊 Önceki Sınavların Analizi</h2>
   <div id="analizAna"></div>
   <div class="alt-butonlar">
-    <button type="button" class="btn pembe kucuk" onclick="gecmisiTemizle()">🗑️ Geçmişi Temizle</button>
+    <button type="button" class="btn pembe kucuk" onclick="gecmisiTemizle()">🗑️ Geçmişimi Temizle (Bulut)</button>
     <button type="button" class="btn kucuk" onclick="kullaniciDegistir()">👤 Kullanıcı Değiştir</button>
   </div>
 </div>
@@ -207,19 +206,16 @@ th{color:var(--neon-yellow);text-shadow:0 0 6px rgba(245,245,0,.7);text-transfor
 })();
 
 /* ═══════════════════════════════════════════════════════
-   🗄️ SUPABASE YAPILANDIRMASI
-   ═══════════════════════════════════════════════════════ */
-const SUPABASE_URL = 'https://jsrpevxqcxgwbsbvirym.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpzcnBldnhxY3hnd2JzYnZpcnltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNTc4NjgsImV4cCI6MjEwMzkzMzg2OH0.8TkHvLttgMbww9Ti0nQdlPxL_GBahq72Qmxy3hVb0as';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-/* ═══════════════════════════════════════════════════════
-   AYARLAR
+   AYARLAR & SUPABASE YAPILANDIRMASI
    ═══════════════════════════════════════════════════════ */
 var DOSYA_ADI = 'sorular.txt';
 var SORU_SAYISI = 10;
-var SINAV_SURESI = 300; // 5 dakika = 300 saniye
+var SINAV_SURESI = 300;
 var EKSIK_ESIGI = 70;
+
+const supabaseUrl = 'https://bkkgtzmanztzufjfmqev.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJra2d0em1hbnp0enVmamZtcWV2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgzNjE5MjIsImV4cCI6MjEwMzkzNzkyMn0.fNu2uQFjWcrvIl7izBNcCYFlZ0vJvVzTzg_Yl9kzSD0';
+const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
 
 /* ═══════════════════════════════════════════════════════
    KATEGORİ TANIMLARI
@@ -263,28 +259,25 @@ var KATEGORILER = [
 var NEON_RENKLER = ['#00fff7','#ff00ff','#39ff14','#f5f500','#ff6ec7','#00ff9f','#ff9f1c','#7b68ee'];
 
 /* ═══════════════════════════════════════════════════════
-   GENEL DURUM
+   GENEL DURUM & VERİTABANI ÖNBELLEĞİ
    ═══════════════════════════════════════════════════════ */
 var SORULAR = [];
 var aktifSinav = null;
 var kullaniciAdi = '';
-var currentUserId = null;
 var zamanInterval = null;
 var chartRefs = {};
+var TUM_LOGLAR = []; // Supabase'den çekilen tüm loglar
 
 try { kullaniciAdi = localStorage.getItem('ekys_user') || ''; } catch(e) { kullaniciAdi = ''; }
 
 /* ═══════════════════════════════════════════════════════
    BAŞLATMA
    ═══════════════════════════════════════════════════════ */
-window.addEventListener('DOMContentLoaded', async function(){
-  await sorulariYukle();
-  if(kullaniciAdi){
-    await ensureUserExists(kullaniciAdi);
-    anaEkranaGec();
-  } else {
-    goster('girisEkrani');
-  }
+window.addEventListener('DOMContentLoaded', function(){
+  Promise.all([verileriSupabasedenCek(), sorulariYukle()]).then(function(){
+    if(kullaniciAdi) anaEkranaGec();
+    else goster('girisEkrani');
+  });
 });
 
 function goster(id){
@@ -296,38 +289,96 @@ function goster(id){
 }
 
 /* ═══════════════════════════════════════════════════════
-   🗄️ SUPABASE KULLANICI İŞLEMLERİ
+   VERİTABANI (SUPABASE) İŞLEMLERİ
    ═══════════════════════════════════════════════════════ */
-async function ensureUserExists(username) {
+async function verileriSupabasedenCek() {
   try {
-    let { data, error } = await supabase.from('users').select('id').eq('username', username).single();
-    if (!data) {
-      const { data: newUser, error: insertError } = await supabase.from('users').insert({ username }).select().single();
-      if (newUser) currentUserId = newUser.id;
-    } else {
-      currentUserId = data.id;
-    }
-  } catch(e) {
-    console.error('Kullanıcı kontrol hatası:', e);
+    const { data, error } = await supabase
+      .from('sinav_loglari')
+      .select('*')
+      .order('tarih', { ascending: true });
+    
+    if (error) throw error;
+    if (data) TUM_LOGLAR = data;
+  } catch (e) {
+    console.error("Supabase veri çekme hatası:", e);
   }
+}
+
+async function logKaydet(log) {
+  try {
+    // 1. Yerel yedeğe (LocalStorage) kaydet
+    var key = 'ekys_logs_' + kullaniciAdi;
+    var localLogs = JSON.parse(localStorage.getItem(key) || '[]');
+    localLogs.push(log);
+    localStorage.setItem(key, JSON.stringify(localLogs));
+
+    // 2. Supabase'e gönder
+    const { error } = await supabase.from('sinav_loglari').insert([{
+      kullanici_adi: log.kullanici_adi,
+      tarih: log.tarih,
+      sure: log.sure,
+      dogru: log.dogru,
+      yanlis: log.yanlis,
+      bos: log.bos,
+      toplam: log.toplam,
+      kategoriler: log.kategoriler,
+      cevaplar: log.cevaplar
+    }]);
+
+    if (error) {
+      console.error("Supabase kayıt hatası:", error);
+    } else {
+      // 3. Veritabanını güncelleyerek grafiklere yansıt
+      await verileriSupabasedenCek(); 
+    }
+  } catch(e) { 
+    console.error(e); 
+  }
+}
+
+function getLogs() {
+  if(!kullaniciAdi) return [];
+  // Supabase'den gelen global listeden filtrele
+  return TUM_LOGLAR.filter(l => l.kullanici_adi === kullaniciAdi);
+}
+
+function tumKullaniciLoglariGetir() {
+  var grouped = {};
+  for (var i = 0; i < TUM_LOGLAR.length; i++) {
+    var l = TUM_LOGLAR[i];
+    var ad = l.kullanici_adi;
+    if (!grouped[ad]) grouped[ad] = [];
+    grouped[ad].push(l);
+  }
+  
+  var sonuc = [];
+  for (var ad in grouped) {
+    sonuc.push({ad: ad, logs: grouped[ad]});
+  }
+  return sonuc;
 }
 
 /* ═══════════════════════════════════════════════════════
    SORU YÜKLEME VE PARSE
    ═══════════════════════════════════════════════════════ */
-async function sorulariYukle(){
-  try{
-    var res = await fetch(DOSYA_ADI);
-    if(!res.ok) throw new Error('Dosya bulunamadı');
-    var txt = await res.text();
-    if(txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
-    SORULAR = parseSoruMetni(txt);
-  }catch(e){
-    console.error('Soru yükleme hatası:', e);
-    SORULAR = [];
-  }finally{
-    soruDurumuGuncelle();
-  }
+function sorulariYukle(){
+  return fetch(DOSYA_ADI)
+    .then(function(res){
+      if(!res.ok) throw new Error('Dosya bulunamadı');
+      return res.text();
+    })
+    .then(function(txt){
+      if(txt.charCodeAt(0) === 0xFEFF) txt = txt.slice(1);
+      SORULAR = parseSoruMetni(txt);
+    })
+    .catch(function(e){
+      console.error('Soru yükleme hatası:', e);
+      SORULAR = [];
+    })
+    .finally(function(){
+      soruDurumuGuncelle();
+    });
 }
 
 function parseSoruMetni(txt){
@@ -409,21 +460,23 @@ function soruDurumuGuncelle(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   KULLANICI GİRİŞİ
+   KULLANICI GİRİŞİ & YÖNETİMİ
    ═══════════════════════════════════════════════════════ */
-async function girisYap(){
+function girisYap(){
   var ad = document.getElementById('kullaniciAdiInput').value.trim();
   if(!ad){ alert('Lütfen bir kullanıcı adı girin.'); return; }
   kullaniciAdi = ad;
   try{ localStorage.setItem('ekys_user', ad); }catch(e){}
-  await ensureUserExists(ad);
   anaEkranaGec();
 }
 
-function anaEkranaGec(){
+async function anaEkranaGec(){
   document.getElementById('hosgeldin').textContent = kullaniciAdi;
   goster('anaEkran');
-  setTimeout(function(){ analizRender('analizAna'); }, 120);
+  document.getElementById('analizAna').innerHTML = '<div class="panel" style="text-align:center;color:var(--neon-cyan);">Buluttan veriler senkronize ediliyor... ⏳</div>';
+  
+  await verileriSupabasedenCek(); // Ana ekrana her dönüşte veritabanını tazele
+  analizRender('analizAna');
 }
 
 function kullaniciDegistir(){
@@ -434,10 +487,18 @@ function kullaniciDegistir(){
 }
 
 async function gecmisiTemizle(){
-  if(confirm('Tüm sınav geçmişin silinsin mi?')){
-    if(currentUserId) {
-      await supabase.from('exam_logs').delete().eq('user_id', currentUserId);
-    }
+  if(confirm('Tüm sınav geçmişiniz silinsin mi? (Bu işlem Supabase bulutundan da kalıcı olarak siler)')){
+    document.getElementById('analizAna').innerHTML = '<div class="panel" style="text-align:center;color:var(--neon-red);">Bulut verileriniz siliniyor... 🗑️</div>';
+    
+    // Yerelden sil
+    try{ localStorage.removeItem('ekys_logs_' + kullaniciAdi); }catch(e){}
+    
+    // Buluttan sil
+    try {
+      await supabase.from('sinav_loglari').delete().eq('kullanici_adi', kullaniciAdi);
+      await verileriSupabasedenCek(); // Tüm logları tekrar güncelle
+    } catch(e) { console.error(e); }
+    
     analizRender('analizAna');
   }
 }
@@ -601,7 +662,7 @@ function sinavdanCik(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   🏁 SINAV BİTİRME
+   🏁 SINAV BİTİRME (Async Supabase Kayıt)
    ═══════════════════════════════════════════════════════ */
 async function sinavBitir(){
   if(!aktifSinav) return;
@@ -612,7 +673,9 @@ async function sinavBitir(){
     var cevaplanmamis = SORU_SAYISI - aktifSinav.cevaplar.length;
     aktifSinav.bos = cevaplanmamis;
 
-    var logData = {
+    var log = {
+      kullanici_adi: kullaniciAdi,
+      tarih: new Date().toISOString(),
       sure: toplamSure,
       dogru: aktifSinav.dogru,
       yanlis: aktifSinav.yanlis,
@@ -621,31 +684,25 @@ async function sinavBitir(){
       kategoriler: aktifSinav.kategoriler,
       cevaplar: aktifSinav.cevaplar
     };
+    
+    aktifSinav = null; // Çifte tıklamayı engelle
 
-    // Supabase'e kaydet
-    if(currentUserId) {
-      await supabase.from('exam_logs').insert({
-        user_id: currentUserId,
-        duration_seconds: logData.sure,
-        correct_count: logData.dogru,
-        wrong_count: logData.yanlis,
-        empty_count: logData.bos,
-        total_questions: logData.toplam,
-        categories: logData.kategoriler,
-        answers: logData.cevaplar
-      });
-    }
-
-    var yuzde = Math.round(logData.dogru / logData.toplam * 100);
-    document.getElementById('sonucOzet').innerHTML =
-      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-green)">' + logData.dogru + '</div><div class="etiket">Doğru</div></div>' +
-      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-red)">' + logData.yanlis + '</div><div class="etiket">Yanlış</div></div>' +
-      '<div class="ozet-kart"><div class="deger">' + logData.bos + '</div><div class="etiket">Boş</div></div>' +
-      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-yellow)">' + sureFormat(logData.sure) + '</div><div class="etiket">Süre</div></div>' +
-      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-pink)">%' + yuzde + '</div><div class="etiket">Başarı</div></div>';
-
-    aktifSinav = null;
+    // Bekleme Ekranı Gösterimi
     goster('sonucEkrani');
+    document.getElementById('sonucOzet').innerHTML = '<div class="ozet-kart" style="width:100%;"><div class="deger" style="color:var(--neon-cyan);font-size:1.2rem;">Buluta Kaydediliyor... ⏳</div></div>';
+    document.getElementById('analizSonuc').innerHTML = '';
+
+    // Supabase'e Yazılmasını Bekle
+    await logKaydet(log);
+
+    // Başarıyla Kaydedildi, Sonuçları Çiz
+    var yuzde = Math.round(log.dogru / log.toplam * 100);
+    document.getElementById('sonucOzet').innerHTML =
+      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-green)">' + log.dogru + '</div><div class="etiket">Doğru</div></div>' +
+      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-red)">' + log.yanlis + '</div><div class="etiket">Yanlış</div></div>' +
+      '<div class="ozet-kart"><div class="deger">' + log.bos + '</div><div class="etiket">Boş</div></div>' +
+      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-yellow)">' + sureFormat(log.sure) + '</div><div class="etiket">Süre</div></div>' +
+      '<div class="ozet-kart"><div class="deger" style="color:var(--neon-pink)">%' + yuzde + '</div><div class="etiket">Başarı</div></div>';
 
     setTimeout(function(){
       try{ analizRender('analizSonuc'); }catch(e){ console.error(e); }
@@ -659,76 +716,13 @@ async function sinavBitir(){
 }
 
 /* ═══════════════════════════════════════════════════════
-   🗄️ SUPABASE LOG İŞLEMLERİ
+   📊 ANALİZ RAPORU (Buluttan gelen verilerle)
    ═══════════════════════════════════════════════════════ */
-async function getAllLogsFromSupabase(){
-  try {
-    let { data, error } = await supabase
-      .from('exam_logs')
-      .select(`
-        id,
-        duration_seconds,
-        correct_count,
-        wrong_count,
-        empty_count,
-        total_questions,
-        categories,
-        answers,
-        created_at,
-        users (username)
-      `)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error("Supabase fetch error:", error);
-      return [];
-    }
-
-    const userLogs = {};
-    data.forEach(log => {
-      const username = log.users?.username || 'Bilinmeyen';
-      if (!userLogs[username]) userLogs[username] = [];
-      userLogs[username].push({
-        tarih: log.created_at,
-        sure: log.duration_seconds,
-        dogru: log.correct_count,
-        yanlis: log.wrong_count,
-        bos: log.empty_count,
-        toplam: log.total_questions,
-        kategoriler: log.categories || {},
-        cevaplar: log.answers || []
-      });
-    });
-
-    return Object.keys(userLogs).map(username => ({
-      ad: username,
-      logs: userLogs[username]
-    }));
-  } catch(e) {
-    console.error("Supabase log hatası:", e);
-    return [];
-  }
-}
-
-/* ═══════════════════════════════════════════════════════
-   📊 ANALİZ RAPORU
-   ═══════════════════════════════════════════════════════ */
-async function analizRender(containerId){
+function analizRender(containerId){
   var container = document.getElementById(containerId);
   if(!container) return;
   
-  container.innerHTML = '<div class="panel" style="text-align:center;color:#9fd8ff;">🔄 Veriler yükleniyor...</div>';
-
-  var tumKullanicilar = await getAllLogsFromSupabase();
-  
-  // Kendi loglarımı bul
-  var benimLoglarim = [];
-  for(var i=0; i<tumKullanicilar.length; i++){
-    if(tumKullanicilar[i].ad === kullaniciAdi){
-      benimLoglarim = tumKullanicilar[i].logs;
-      break;
-    }
-  }
+  var logs = getLogs();
 
   for(var key in chartRefs){
     if(chartRefs[key]){
@@ -737,45 +731,30 @@ async function analizRender(containerId){
     }
   }
 
-  if(!benimLoglarim.length && !tumKullanicilar.length){
+  if(!logs.length){
     container.innerHTML = '<div class="panel" style="text-align:center;color:#9fd8ff;">📊 Henüz kayıtlı sınav yok. İlk denemeni başlat!</div>';
     return;
   }
 
-  var benimToplamSinav = benimLoglarim.length;
-  var ortDogru = benimToplamSinav > 0 ? (benimLoglarim.reduce(function(a,l){return a+l.dogru;},0)/benimToplamSinav).toFixed(1) : 0;
-  var ortYuzde = benimToplamSinav > 0 ? Math.round(benimLoglarim.reduce(function(a,l){return a+(l.dogru/l.toplam*100);},0)/benimToplamSinav) : 0;
-  var ortSure = benimToplamSinav > 0 ? Math.round(benimLoglarim.reduce(function(a,l){return a+l.sure;},0)/benimToplamSinav) : 0;
-  var enIyi = benimToplamSinav > 0 ? Math.max.apply(null, benimLoglarim.map(function(l){return l.dogru;})) : 0;
+  var toplamSinav = logs.length;
+  var ortDogru = (logs.reduce(function(a,l){return a+l.dogru;},0)/toplamSinav).toFixed(1);
+  var ortYuzde = Math.round(logs.reduce(function(a,l){return a+(l.dogru/l.toplam*100);},0)/toplamSinav);
+  var ortSure = Math.round(logs.reduce(function(a,l){return a+l.sure;},0)/toplamSinav);
+  var enIyi = Math.max.apply(null, logs.map(function(l){return l.dogru;}));
 
-  // Diğer adayların ortalaması
-  var digerOrtDogru = null;
-  var toplamDigerDogru = 0;
-  var toplamDigerSinav = 0;
-  
-  for(var i=0; i<tumKullanicilar.length; i++){
-    if(tumKullanicilar[i].ad !== kullaniciAdi){
-      for(var j=0; j<tumKullanicilar[i].logs.length; j++){
-        toplamDigerDogru += tumKullanicilar[i].logs[j].dogru;
-        toplamDigerSinav++;
-      }
-    }
-  }
-  
-  if(toplamDigerSinav > 0){
-    digerOrtDogru = Math.round((toplamDigerDogru / toplamDigerSinav) * 10) / 10;
-  }
+  /* Diğer adayların ortalaması */
+  var digerOrtDogru = digerAdaylarOrtalamaDogru();
+  var digerKatOrt = digerAdaylarKategoriOrtalamalari();
+  var digerVar = (digerOrtDogru !== null);
 
-  // Kategori analizi - kullanıcı
+  /* Kullanıcının kategori ortalamaları */
   var katToplam = {};
-  if(benimToplamSinav > 0){
-    for(var i=0;i<benimLoglarim.length;i++){
-      var katlar = benimLoglarim[i].kategoriler;
-      for(var k in katlar){
-        if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
-        katToplam[k].dogru += katlar[k].dogru;
-        katToplam[k].toplam += katlar[k].toplam;
-      }
+  for(var i=0;i<logs.length;i++){
+    var katlar = logs[i].kategoriler;
+    for(var k in katlar){
+      if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
+      katToplam[k].dogru += katlar[k].dogru;
+      katToplam[k].toplam += katlar[k].toplam;
     }
   }
   var katYuzde = {};
@@ -783,38 +762,18 @@ async function analizRender(containerId){
     katYuzde[k2] = Math.round(katToplam[k2].dogru / katToplam[k2].toplam * 100);
   }
 
-  // Diğer adayların kategori ortalamaları
-  var digerKatOrt = {};
-  if(toplamDigerSinav > 0){
-    var digerKatToplam = {};
-    for(var i=0; i<tumKullanicilar.length; i++){
-      if(tumKullanicilar[i].ad === kullaniciAdi) continue;
-      for(var j=0; j<tumKullanicilar[i].logs.length; j++){
-        var katlar = tumKullanicilar[i].logs[j].kategoriler;
-        for(var k in katlar){
-          if(!digerKatToplam[k]) digerKatToplam[k] = {dogru:0, toplam:0};
-          digerKatToplam[k].dogru += katlar[k].dogru;
-          digerKatToplam[k].toplam += katlar[k].toplam;
-        }
-      }
-    }
-    for(var k in digerKatToplam){
-      digerKatOrt[k] = Math.round(digerKatToplam[k].dogru / digerKatToplam[k].toplam * 100);
-    }
-  }
-
-  // Eksik konular
   var eksikler = [];
-  for(var k in katYuzde){
-    if(katYuzde[k] < EKSIK_ESIGI) eksikler.push([k, katYuzde[k]]);
+  for(var k3 in katYuzde){
+    if(katYuzde[k3] < EKSIK_ESIGI) eksikler.push([k3, katYuzde[k3]]);
   }
   eksikler.sort(function(a,b){ return a[1]-b[1]; });
 
+  /* Gelişim mesajı */
   var gelisimMesaji = '';
-  if(benimToplamSinav >= 2){
-    var yaris = Math.floor(benimToplamSinav / 2);
-    var ilkYari = benimLoglarim.slice(0, yaris).reduce(function(a,l){return a+l.dogru;},0)/yaris;
-    var ikinciYari = benimLoglarim.slice(yaris).reduce(function(a,l){return a+l.dogru;},0)/(benimToplamSinav-yaris);
+  if(logs.length >= 2){
+    var yaris = Math.floor(logs.length / 2);
+    var ilkYari = logs.slice(0, yaris).reduce(function(a,l){return a+l.dogru;},0)/yaris;
+    var ikinciYari = logs.slice(yaris).reduce(function(a,l){return a+l.dogru;},0)/(logs.length-yaris);
     var fark = ikinciYari - ilkYari;
     if(fark > 0.5) gelisimMesaji = '📈 Gelişim trendin <b style="color:var(--neon-green)">POZİTİF!</b> Son sınavlardaki ortalaman önceye göre <b>+' + fark.toFixed(1) + '</b> doğru arttı.';
     else if(fark < -0.5) gelisimMesaji = '📉 Dikkat! Son sınavlardaki ortalaman önceye göre <b style="color:var(--neon-red)">' + fark.toFixed(1) + '</b> düştü.';
@@ -823,8 +782,9 @@ async function analizRender(containerId){
     gelisimMesaji = '📊 Gelişim raporu için en az 2 sınav gereklidir.';
   }
 
+  /* Karşılaştırma mesajı */
   var karsilastirmaMesaji = '';
-  if(digerOrtDogru !== null && benimToplamSinav > 0){
+  if(digerVar){
     var seninOrt = parseFloat(ortDogru);
     if(seninOrt > digerOrtDogru){
       karsilastirmaMesaji = '🏆 Diğer adayların ortalamasının <b style="color:var(--neon-green)">+' + (seninOrt - digerOrtDogru).toFixed(1) + '</b> doğru üzerindesin!';
@@ -837,12 +797,12 @@ async function analizRender(containerId){
 
   var html = '';
   html += '<div class="ozet-kartlar">' +
-    '<div class="ozet-kart"><div class="deger">' + benimToplamSinav + '</div><div class="etiket">Toplam Sınav</div></div>' +
+    '<div class="ozet-kart"><div class="deger">' + toplamSinav + '</div><div class="etiket">Toplam Sınav</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + ortDogru + '/' + SORU_SAYISI + '</div><div class="etiket">Ortalama Doğru</div></div>' +
     '<div class="ozet-kart"><div class="deger">%' + ortYuzde + '</div><div class="etiket">Ortalama Başarı</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + sureFormat(ortSure) + '</div><div class="etiket">Ortalama Süre</div></div>' +
     '<div class="ozet-kart"><div class="deger">' + enIyi + '/' + SORU_SAYISI + '</div><div class="etiket">En İyi Skor</div></div>' +
-    (digerOrtDogru !== null ? '<div class="ozet-kart"><div class="deger" style="color:var(--neon-orange)">' + digerOrtDogru + '/' + SORU_SAYISI + '</div><div class="etiket">Diğer Aday Ort.</div></div>' : '') +
+    (digerVar ? '<div class="ozet-kart"><div class="deger" style="color:var(--neon-orange)">' + digerOrtDogru + '/' + SORU_SAYISI + '</div><div class="etiket">Diğer Aday Ort.</div></div>' : '') +
     '</div>';
 
   html += '<div class="panel"><h3>📈 Gelişim Raporu</h3><p style="margin-top:8px;font-size:1.05rem;">' + gelisimMesaji + '</p>';
@@ -850,11 +810,11 @@ async function analizRender(containerId){
   html += '</div>';
 
   html += '<div class="panel"><h3>📉 Başarı Gelişim Grafiği</h3>';
-  if(digerOrtDogru !== null) html += '<p class="grafik-not">Mavi çizgi: Senin doğruların | Turuncu kesikli çizgi: Diğer adayların ortalaması</p>';
+  if(digerVar) html += '<p class="grafik-not">Mavi çizgi: Senin doğruların | Turuncu kesikli çizgi: Diğer adayların ortalaması</p>';
   html += '<canvas id="' + containerId + '_gelisim" height="90"></canvas></div>';
 
   html += '<div class="panel"><h3>📊 Konu Bazlı Başarı</h3>';
-  if(digerOrtDogru !== null) html += '<p class="grafik-not">Renkli barlar: Senin başarın | Turuncu barlar: Diğer adayların ortalaması</p>';
+  if(digerVar) html += '<p class="grafik-not">Renkli barlar: Senin başarın | Turuncu barlar: Diğer adayların ortalaması</p>';
   html += '<canvas id="' + containerId + '_kategori" height="' + (Object.keys(katYuzde).length * 36 + 40) + '"></canvas></div>';
 
   html += '<div class="panel"><h3>🎯 Eksik Konu Başlıkları (Başarı &lt; %' + EKSIK_ESIGI + ')</h3>';
@@ -869,33 +829,31 @@ async function analizRender(containerId){
   }
   html += '</div>';
 
-  // Anonim sıralama tablosu
-  html += await liderlikTablosuHtml(tumKullanicilar);
+  /* Anonim sıralama tablosu */
+  html += liderlikTablosuHtml();
 
-  // Son sınavlar
-  if(benimToplamSinav > 0) {
-    var sonLogs = benimLoglarim.slice(-5).reverse();
-    html += '<div class="panel"><h3>🗂️ Son Sınavların</h3><table><thead><tr>' +
-      '<th>Tarih</th><th>Süre</th><th>Doğru</th><th>Yanlış</th><th>Başarı</th></tr></thead><tbody>';
-    for(var sl=0;sl<sonLogs.length;sl++){
-      var l = sonLogs[sl];
-      var tarihStr = '';
-      try{
-        var t = new Date(l.tarih);
-        tarihStr = t.toLocaleDateString('tr-TR') + ' ' + t.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-      }catch(e2){ tarihStr = l.tarih; }
-      var yz = Math.round(l.dogru / l.toplam * 100);
-      var renk = yz >= EKSIK_ESIGI ? 'var(--neon-green)' : 'var(--neon-red)';
-      html += '<tr><td>' + tarihStr + '</td><td>' + sureFormat(l.sure) + '</td><td>' + l.dogru + '/' + l.toplam +
-        '</td><td>' + l.yanlis + '</td><td style="color:' + renk + ';font-weight:700;">%' + yz + '</td></tr>';
-    }
-    html += '</tbody></table></div>';
+  /* Son sınavlar */
+  var sonLogs = logs.slice(-5).reverse();
+  html += '<div class="panel"><h3>🗂️ Son Sınavlar</h3><table><thead><tr>' +
+    '<th>Tarih</th><th>Süre</th><th>Doğru</th><th>Yanlış</th><th>Başarı</th></tr></thead><tbody>';
+  for(var sl=0;sl<sonLogs.length;sl++){
+    var l = sonLogs[sl];
+    var tarihStr = '';
+    try{
+      var t = new Date(l.tarih);
+      tarihStr = t.toLocaleDateString('tr-TR') + ' ' + t.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+    }catch(e2){ tarihStr = l.tarih; }
+    var yz = Math.round(l.dogru / l.toplam * 100);
+    var renk = yz >= EKSIK_ESIGI ? 'var(--neon-green)' : 'var(--neon-red)';
+    html += '<tr><td>' + tarihStr + '</td><td>' + sureFormat(l.sure) + '</td><td>' + l.dogru + '/' + l.toplam +
+      '</td><td>' + l.yanlis + '</td><td style="color:' + renk + ';font-weight:700;">%' + yz + '</td></tr>';
   }
+  html += '</tbody></table></div>';
 
   container.innerHTML = html;
 
   /* Grafikleri gecikmeli çiz */
-  var grafikLogs = benimToplamSinav > 0 ? benimLoglarim.slice(-15) : [];
+  var grafikLogs = logs.slice(-15);
   setTimeout(function(){
     try{
       gelisimGrafigiCiz(containerId + '_gelisim', grafikLogs, digerOrtDogru);
@@ -909,31 +867,27 @@ async function analizRender(containerId){
 /* ═══════════════════════════════════════════════════════
    🏆 ANONİM SIRALAMA TABLOSU
    ═══════════════════════════════════════════════════════ */
-async function liderlikTablosuHtml(tumKullanicilar){
-  if(!tumKullanicilar || !tumKullanicilar.length) return '';
+function liderlikTablosuHtml(){
+  var kullanicilar = tumKullaniciLoglariGetir();
+  if(!kullanicilar.length) return '';
 
   var skorlar = [];
-  for(var i=0; i<tumKullanicilar.length; i++){
-    var logs = tumKullanicilar[i].logs;
+  for(var i=0;i<kullanicilar.length;i++){
+    var logs = kullanicilar[i].logs;
     var enIyi = 0, toplamYuzde = 0;
-    for(var j=0; j<logs.length; j++){
+    for(var j=0;j<logs.length;j++){
       var yuzde = Math.round(logs[j].dogru / logs[j].toplam * 100);
       if(yuzde > enIyi) enIyi = yuzde;
       toplamYuzde += yuzde;
     }
-    skorlar.push({
-      ad: tumKullanicilar[i].ad,
-      enIyi: enIyi,
-      ort: Math.round(toplamYuzde / logs.length),
-      sinav: logs.length
-    });
+    skorlar.push({ ad: kullanicilar[i].ad, enIyi: enIyi, ort: Math.round(toplamYuzde/logs.length), sinav: logs.length });
   }
   skorlar.sort(function(a,b){ return b.enIyi - a.enIyi; });
 
-  var html = '<div class="panel"><h3>🏆 Anonim Sıralama Tablosu</h3>';
+  var html = '<div class="panel"><h3>🏆 Anonim Sıralama Tablosu (Bulut)</h3>';
   html += '<p class="grafik-not">Kimlikler gizlidir. Sıralama en iyi skora göre yapılır.</p>';
   html += '<table><thead><tr><th>Sıra</th><th>Rumuz</th><th>En İyi</th><th>Ortalama</th><th>Sınav</th></tr></thead><tbody>';
-  for(var i=0; i<skorlar.length; i++){
+  for(var i=0;i<skorlar.length;i++){
     var aktif = skorlar[i].ad === kullaniciAdi;
     var stil = aktif ? ' style="color:var(--neon-green);font-weight:bold;text-shadow:0 0 8px var(--neon-green);"' : '';
     var etiket = aktif ? ' ← SİZ' : '';
@@ -944,13 +898,49 @@ async function liderlikTablosuHtml(tumKullanicilar){
 }
 
 /* ═══════════════════════════════════════════════════════
+   DİĞER ADAYLARIN ORTALAMALARI
+   ═══════════════════════════════════════════════════════ */
+function digerAdaylarOrtalamaDogru(){
+  var tumu = tumKullaniciLoglariGetir();
+  var toplamDogru = 0, toplamSinav = 0;
+  for(var i=0;i<tumu.length;i++){
+    if(tumu[i].ad === kullaniciAdi) continue;
+    for(var j=0;j<tumu[i].logs.length;j++){
+      toplamDogru += tumu[i].logs[j].dogru;
+      toplamSinav++;
+    }
+  }
+  if(toplamSinav === 0) return null;
+  return Math.round((toplamDogru / toplamSinav) * 10) / 10;
+}
+
+function digerAdaylarKategoriOrtalamalari(){
+  var tumu = tumKullaniciLoglariGetir();
+  var katToplam = {};
+  for(var i=0;i<tumu.length;i++){
+    if(tumu[i].ad === kullaniciAdi) continue;
+    for(var j=0;j<tumu[i].logs.length;j++){
+      var katlar = tumu[i].logs[j].kategoriler;
+      for(var k in katlar){
+        if(!katToplam[k]) katToplam[k] = {dogru:0, toplam:0};
+        katToplam[k].dogru += katlar[k].dogru;
+        katToplam[k].toplam += katlar[k].toplam;
+      }
+    }
+  }
+  var sonuc = {};
+  for(var k2 in katToplam){
+    sonuc[k2] = Math.round(katToplam[k2].dogru / katToplam[k2].toplam * 100);
+  }
+  return sonuc;
+}
+
+/* ═══════════════════════════════════════════════════════
    📈 GRAFİKLER
    ═══════════════════════════════════════════════════════ */
 function gelisimGrafigiCiz(canvasId, logs, digerOrt){
   var ctx = document.getElementById(canvasId);
   if(!ctx || typeof Chart === 'undefined') return;
-  if(!logs.length) return; // Eğer log yoksa grafik çizme
-
   var labels = [];
   var data = [];
   for(var i=0;i<logs.length;i++){
@@ -1005,8 +995,6 @@ function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
   var ctx = document.getElementById(canvasId);
   if(!ctx || typeof Chart === 'undefined') return;
   var labels = Object.keys(katYuzde);
-  if(!labels.length) return; // Eğer kategori verisi yoksa grafik çizme
-
   var dataSen = [];
   var renklerSen = [];
   for(var i=0;i<labels.length;i++){
@@ -1022,6 +1010,7 @@ function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
     borderWidth: 2
   }];
 
+  var digerVar = false;
   if(digerKatOrt && Object.keys(digerKatOrt).length > 0){
     var dataDiger = [];
     for(var i=0;i<labels.length;i++){
@@ -1034,6 +1023,7 @@ function kategoriGrafigiCiz(canvasId, katYuzde, digerKatOrt){
       borderColor: '#ff9f1c',
       borderWidth: 2
     });
+    digerVar = true;
   }
 
   chartRefs[canvasId] = new Chart(ctx, {
